@@ -17,83 +17,51 @@ function PiggyBankIcon(props: React.SVGProps<SVGSVGElement>) {
       height="128"
       {...props}
     >
-      <g>
-        {/* Coin */}
-        <ellipse
-          cx="120"
-          cy="40"
-          rx="25"
-          ry="10"
-          fill="#FFD700"
-          stroke="#FDB813"
-          strokeWidth="2"
-        />
-        <ellipse
-          cx="120"
-          cy="50"
-          rx="25"
-          ry="10"
-          fill="#FDB813"
-          stroke="#FDB813"
-          strokeWidth="2"
-        />
-        <ellipse
-          cx="120"
-          cy="45"
-          rx="25"
-          ry="20"
-          fill="none"
-          stroke="#FFD700"
-          strokeWidth="0.5"
-        />
+      <g strokeLinecap="round" strokeLinejoin="round">
+        {/* Pig Body */}
         <path
-          d="M115 45 q5 -15 10 0 q-5 15 -10 0"
-          fill="#FDB813"
-          stroke="#FDB813"
-          strokeWidth="1"
+          d="M60 160 C 20 150, 20 90, 70 80 C 110 70, 160 80, 185 120 C 205 150, 180 185, 140 185 C 100 190, 90 165, 60 160 Z"
+          fill="#A8E0A8"
+          stroke="#558B55"
+          strokeWidth="5"
         />
-        
-        {/* Pig body */}
-        <path
-          d="M50,150 C10,140 10,80 60,70 C100,60 150,70 180,110 C200,140 170,180 130,180 C90,185 80,160 50,150 Z"
-          fill="#FFC0CB"
-          stroke="#F08080"
-          strokeWidth="2"
-        />
-        
+        {/* Feet */}
+        <path d="M80 183 C 75 198, 95 198, 90 183 Z" fill="#97C997" stroke="#558B55" strokeWidth="4" />
+        <path d="M120 183 C 115 198, 135 198, 130 183 Z" fill="#97C997" stroke="#558B55" strokeWidth="4" />
+
         {/* Ears */}
-        <path d="M80,70 C70,50 100,50 100,70 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M140,80 C130,60 160,60 160,80 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M145,80 C142,68 155,68 155,80 Z" fill="#F08080" />
-        
+        <path d="M85 82 C 75 62, 105 62, 105 82 Z" fill="#97C997" stroke="#558B55" strokeWidth="4" />
+        <path d="M140 90 C 130 70, 160 70, 160 90 Z" fill="#97C997" stroke="#558B55" strokeWidth="4" />
+
         {/* Snout */}
-        <ellipse cx="175" cy="130" rx="15" ry="10" fill="#F4A7B9" stroke="#E17C94" strokeWidth="1.5" />
-        <circle cx="172" cy="130" r="2" fill="#C76D82" />
-        <circle cx="178" cy="130" r="2" fill="#C76D82" />
+        <ellipse cx="180" cy="140" rx="16" ry="13" fill="#B9EAB9" stroke="#558B55" strokeWidth="4" />
+        <ellipse cx="176" cy="140" rx="3" ry="4" fill="#4A7A4A" />
+        <ellipse cx="184" cy="140" rx="3" ry="4" fill="#4A7A4A" />
 
         {/* Eyes */}
-        <circle cx="125" cy="110" r="3" fill="#333" />
-        <circle cx="155" cy="110" r="3" fill="#333" />
-        
-        {/* Feet */}
-        <path d="M70,175 C65,190 85,190 80,175 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M70,187 C68,189 82,189 80,187 Z" fill="#4B0082" />
-        
-        <path d="M95,178 C90,193 110,193 105,178 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M95,190 C93,192 107,192 105,190 Z" fill="#4B0082" />
-        
-        <path d="M125,178 C120,193 140,193 135,178 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M125,190 C123,192 137,192 135,190 Z" fill="#4B0082" />
-        
-        <path d="M150,165 C145,180 165,180 160,165 Z" fill="#FFC0CB" stroke="#F08080" strokeWidth="2" />
-        <path d="M150,177 C148,179 162,179 160,177 Z" fill="#4B0082" />
-        
-        {/* Tail */}
-        <path d="M40,120 C20,100 50,90 50,110 C50,125 30,125 35,115" fill="none" stroke="#F08080" strokeWidth="2" strokeLinecap="round" />
-        
-        {/* Coin Slot */}
-        <path d="M100 85 h 30" stroke="#E17C94" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="125" cy="115" r="4.5" fill="black" />
+        <circle cx="155" cy="115" r="4.5" fill="black" />
 
+        {/* Tail */}
+        <path d="M50 130 C 30 110, 60 100, 60 120 C 60 135, 40 135, 45 125" fill="none" stroke="#558B55" strokeWidth="4" />
+
+        {/* Coin Slot */}
+        <path d="M100 95 h 30" stroke="#4A7A4A" strokeWidth="5" />
+
+        {/* Dollar Sign */}
+        <text
+            x="125"
+            y="155"
+            fontFamily="Arial, sans-serif"
+            fontSize="40"
+            fontWeight="bold"
+            fill="white"
+            stroke="hsl(var(--foreground))"
+            strokeWidth="1"
+            textAnchor="middle"
+        >
+          $
+        </text>
       </g>
     </svg>
   );
