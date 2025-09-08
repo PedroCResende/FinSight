@@ -38,17 +38,16 @@ export function TransactionList({
 
   const formatDate = (dateString: string) => {
     try {
-      // Lida com 'YYYY-MM-DD' e 'YYYY/MM/DD'
       const sanitizedDateString = dateString.replace(/\//g, '-');
       const [year, month, day] = sanitizedDateString.split('-').map(Number);
       if (isNaN(year) || isNaN(month) || isNaN(day)) {
-        return dateString; // Retorna original se o parse falhar
+        return dateString;
       }
       const date = new Date(Date.UTC(year, month - 1, day));
       return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(date);
     } catch (e) {
       console.error('Error formatting date:', e);
-      return dateString; // Fallback para string original
+      return dateString;
     }
   };
 
@@ -99,7 +98,12 @@ export function TransactionList({
                             value={category?.id}
                             disabled={transaction.amount > 0}
                           >
-                             <SelectTrigger>
+                             <SelectTrigger
+                              style={{
+                                borderColor: category?.color,
+                                borderWidth: category ? '2px' : '',
+                              }}
+                            >
                                <SelectValue>
                                 {category ? (
                                     <div className="flex items-center gap-2">
