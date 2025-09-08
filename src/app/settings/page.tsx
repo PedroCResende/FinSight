@@ -37,7 +37,7 @@ export default function SettingsPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="mx-auto grid w-full max-w-6xl gap-2">
           <div className="flex items-center gap-4">
-            <Link href="/" asChild>
+            <Link href="/">
               <Button variant="outline" size="icon">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar</span>
