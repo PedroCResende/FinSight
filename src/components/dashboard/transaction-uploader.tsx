@@ -27,8 +27,8 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     if (!file) {
       toast({
         variant: 'destructive',
-        title: 'No file selected',
-        description: 'Please select a CSV file to upload.',
+        title: 'Nenhum arquivo selecionado',
+        description: 'Por favor, selecione um arquivo CSV para enviar.',
       });
       return;
     }
@@ -46,7 +46,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         const valueIndex = header.indexOf('Value');
         
         if (dateIndex === -1 || descriptionIndex === -1 || valueIndex === -1) {
-            throw new Error("Invalid CSV format. Required columns: 'Date', 'Description', 'Value'");
+            throw new Error("Formato CSV inválido. Colunas necessárias: 'Date', 'Description', 'Value'");
         }
 
         const transactions: Omit<Transaction, 'id' | 'category'>[] = lines
@@ -63,14 +63,14 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         
         onUpload(transactions as Transaction[]);
         toast({
-          title: 'Upload successful',
-          description: `${transactions.length} transactions have been imported.`,
+          title: 'Upload bem-sucedido',
+          description: `${transactions.length} transações foram importadas.`,
         });
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: 'Upload failed',
-          description: error instanceof Error ? error.message : 'An unknown error occurred during parsing.',
+          title: 'Falha no upload',
+          description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido durante a análise.',
         });
       } finally {
         setIsParsing(false);
@@ -83,15 +83,15 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Transactions</CardTitle>
-        <CardDescription>Upload a CSV file with your bank transactions. Columns should be: Date, Description, Value.</CardDescription>
+        <CardTitle>Enviar Transações</CardTitle>
+        <CardDescription>Envie um arquivo CSV com suas transações bancárias. As colunas devem ser: Date, Description, Value.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2">
           <Input id="csv-upload" type="file" accept=".csv" onChange={handleFileChange} disabled={isParsing} />
           <Button onClick={handleUpload} disabled={!file || isParsing}>
             <Upload className="mr-2 h-4 w-4" />
-            {isParsing ? 'Uploading...' : 'Upload'}
+            {isParsing ? 'Enviando...' : 'Enviar'}
           </Button>
         </div>
       </CardContent>

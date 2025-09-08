@@ -43,7 +43,7 @@ export function IconPicker({ selectedIcon: SelectedIcon, setSelectedIcon }: Icon
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-[280px] justify-start font-normal">
           <SelectedIcon className="mr-2 h-4 w-4" />
-          Select an icon
+          Selecione um ícone
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">

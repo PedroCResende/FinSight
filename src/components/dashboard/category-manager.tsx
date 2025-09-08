@@ -72,13 +72,13 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Manage Categories</CardTitle>
-        <CardDescription>Create, edit, or delete your spending categories.</CardDescription>
+        <CardTitle>Gerenciar Categorias</CardTitle>
+        <CardDescription>Crie, edite ou exclua suas categorias de gastos.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <Button onClick={openDialogForNew} className="w-full sm:w-auto">
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Category
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Categoria
           </Button>
           <div className="rounded-md border">
             <div className="divide-y divide-border">
@@ -97,7 +97,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
                 </div>
               ))}
               {categories.length === 0 && (
-                <p className="p-4 text-center text-muted-foreground">No categories found.</p>
+                <p className="p-4 text-center text-muted-foreground">Nenhuma categoria encontrada.</p>
               )}
             </div>
           </div>
@@ -107,26 +107,26 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{currentCategory?.id ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+            <DialogTitle>{currentCategory?.id ? 'Editar Categoria' : 'Adicionar Nova Categoria'}</DialogTitle>
             <DialogDescription>
-              {currentCategory?.id ? 'Update the details for your category.' : 'Create a new category to track your spending.'}
+              {currentCategory?.id ? 'Atualize os detalhes da sua categoria.' : 'Crie uma nova categoria para acompanhar seus gastos.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
+              <Label htmlFor="name" className="text-right">Nome</Label>
               <Input id="name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-               <Label htmlFor="icon" className="text-right">Icon</Label>
+               <Label htmlFor="icon" className="text-right">Ícone</Label>
                <div className="col-span-3">
                  <IconPicker selectedIcon={selectedIcon} setSelectedIcon={setSelectedIcon} />
                </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSave}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

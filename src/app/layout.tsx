@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: 'FinSight',
-  description: 'Smart Personal Finance Tracker',
+  description: 'Seu Rastreador Financeiro Pessoal e Inteligente',
 };
 
 export default function RootLayout({

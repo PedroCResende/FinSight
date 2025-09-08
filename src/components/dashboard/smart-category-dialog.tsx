@@ -49,7 +49,7 @@ export function SmartCategoryDialog({
           });
           setSuggestion(result);
         } catch (e) {
-          setError('Failed to get a suggestion. Please try again.');
+          setError('Falha ao obter sugestão. Por favor, tente novamente.');
           console.error(e);
         } finally {
           setIsLoading(false);
@@ -67,7 +67,7 @@ export function SmartCategoryDialog({
         onCategorize(transaction.id, category.id);
         onOpenChange(false);
       } else {
-        setError(`Suggested category "${suggestion.suggestedCategory}" does not exist.`);
+        setError(`A categoria sugerida "${suggestion.suggestedCategory}" não existe.`);
       }
     }
   };
@@ -76,8 +76,8 @@ export function SmartCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>AI Category Suggestion</DialogTitle>
-          <DialogDescription>For transaction: "{transaction.description}"</DialogDescription>
+          <DialogTitle>Sugestão de Categoria por IA</DialogTitle>
+          <DialogDescription>Para a transação: "{transaction.description}"</DialogDescription>
         </DialogHeader>
         <div className="py-4">
           {isLoading && (
@@ -90,7 +90,7 @@ export function SmartCategoryDialog({
           {error && <p className="text-sm text-destructive">{error}</p>}
           {suggestion && (
             <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
-              <h3 className="font-semibold text-lg">Suggested: {suggestion.suggestedCategory}</h3>
+              <h3 className="font-semibold text-lg">Sugerido: {suggestion.suggestedCategory}</h3>
               <div className="flex items-start gap-3">
                 <Lightbulb className="h-5 w-5 text-accent flex-shrink-0 mt-1" />
                 <p className="text-sm text-muted-foreground">{suggestion.reasoning}</p>
@@ -100,11 +100,11 @@ export function SmartCategoryDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleAccept} disabled={isLoading || !suggestion}>
             <Check className="mr-2 h-4 w-4" />
-            Accept Suggestion
+            Aceitar Sugestão
           </Button>
         </DialogFooter>
       </DialogContent>
