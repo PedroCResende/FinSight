@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Pencil } from 'lucide-react';
 import type { Transaction, Category } from '@/lib/types';
 import { SmartCategoryDialog } from './smart-category-dialog';
 
@@ -41,19 +41,19 @@ export function TransactionList({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-          <CardDescription>View and categorize your recent transactions.</CardDescription>
+          <CardTitle>Transações</CardTitle>
+          <CardDescription>Visualize e categorize suas transações recentes.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -75,28 +75,21 @@ export function TransactionList({
                           })}
                         </TableCell>
                         <TableCell>
-                          {category ? (
-                            <Badge variant="outline" style={{ borderLeft: `4px solid ${category.color}` }} className="flex items-center gap-2">
-                               <category.icon className="h-4 w-4" style={{ color: category.color }} />
-                               {category.name}
-                            </Badge>
-                          ) : (
-                             <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    <div className="flex items-center gap-2">
-                                      <cat.icon className="h-4 w-4" />
-                                      {cat.name}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
+                           <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)} value={category?.id}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  <div className="flex items-center gap-2">
+                                    <cat.icon className="h-4 w-4" />
+                                    {cat.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="text-center">
                           {!category && (
@@ -106,7 +99,7 @@ export function TransactionList({
                               onClick={() => setSelectedTransaction(transaction)}
                             >
                               <Sparkles className="h-4 w-4 text-accent" />
-                              <span className="sr-only">Suggest Category</span>
+                              <span className="sr-only">Sugerir Categoria</span>
                             </Button>
                           )}
                         </TableCell>
@@ -116,7 +109,7 @@ export function TransactionList({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      No transactions found.
+                      Nenhuma transação encontrada.
                     </TableCell>
                   </TableRow>
                 )}
