@@ -81,15 +81,22 @@ export function TransactionList({
                           })}
                         </TableCell>
                         <TableCell>
-                           <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)} value={category?.id}>
+                          <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)} value={category?.id}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione a categoria" />
+                              {category ? (
+                                <div className="flex items-center gap-2">
+                                  <category.icon className="h-4 w-4" style={{ color: category.color }} />
+                                  <SelectValue placeholder="Selecione a categoria" />
+                                </div>
+                              ) : (
+                                <SelectValue placeholder="Selecione a categoria" />
+                              )}
                             </SelectTrigger>
                             <SelectContent>
                               {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.id}>
                                   <div className="flex items-center gap-2">
-                                    <cat.icon className="h-4 w-4" />
+                                    <cat.icon className="h-4 w-4" style={{ color: cat.color }} />
                                     {cat.name}
                                   </div>
                                 </SelectItem>
