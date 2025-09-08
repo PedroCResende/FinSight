@@ -37,6 +37,12 @@ export function TransactionList({
 
   const getCategoryFromId = (id: string) => categories.find((c) => c.id === id);
 
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  };
+
   return (
     <>
       <Card>
@@ -62,7 +68,7 @@ export function TransactionList({
                     const category = transaction.category ? getCategoryFromId(transaction.category) : null;
                     return (
                       <TableRow key={transaction.id}>
-                        <TableCell>{new Date(transaction.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{formatDate(transaction.date)}</TableCell>
                         <TableCell className="font-medium">{transaction.description}</TableCell>
                         <TableCell
                           className={`text-right font-semibold ${
