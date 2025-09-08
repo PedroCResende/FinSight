@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, Pencil } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type { Transaction, Category } from '@/lib/types';
 import { SmartCategoryDialog } from './smart-category-dialog';
 
@@ -38,10 +37,27 @@ export function TransactionList({
   const getCategoryFromId = (id: string) => categories.find((c) => c.id === id);
 
   const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    try {
+      // Handles both 'YYYY-MM-DD' and 'YYYY/MM/DD'
+      const sanitizedDateString = dateString.replace(/\//g, '-');
+      const [year, month, day] = sanitizedDateString.split('-').map(Number);
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return dateString; // Return original if parsing fails
+      }
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(date);
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return dateString; // Fallback to original string
+    }
   };
+
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  }
 
   return (
     <>
@@ -75,23 +91,13 @@ export function TransactionList({
                             transaction.amount < 0 ? 'text-red-400' : 'text-green-400'
                           }`}
                         >
-                          {transaction.amount.toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
+                          {formatCurrency(transaction.amount)}
                         </TableCell>
                         <TableCell>
                           <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)} value={category?.id}>
-                            <SelectTrigger>
-                              {category ? (
-                                <div className="flex items-center gap-2">
-                                  <category.icon className="h-4 w-4" style={{ color: category.color }} />
-                                  <SelectValue placeholder="Selecione a categoria" />
-                                </div>
-                              ) : (
-                                <SelectValue placeholder="Selecione a categoria" />
-                              )}
-                            </SelectTrigger>
+                             <SelectTrigger>
+                               <SelectValue placeholder="Selecione a categoria" />
+                             </SelectTrigger>
                             <SelectContent>
                               {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.id}>
