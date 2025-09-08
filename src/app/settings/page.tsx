@@ -1,12 +1,14 @@
 'use client';
 
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
 import { Header } from '@/components/dashboard/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   const { setTheme, theme } = useTheme();
@@ -17,7 +19,16 @@ export default function SettingsPage() {
   }, []);
 
   if (!mounted) {
-    return null;
+    return (
+      <div className="flex min-h-screen w-full flex-col bg-background">
+        <Header />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <div className="mx-auto grid w-full max-w-6xl gap-2">
+            <h1 className="text-3xl font-semibold">Configurações</h1>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -25,7 +36,15 @@ export default function SettingsPage() {
       <Header />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="mx-auto grid w-full max-w-6xl gap-2">
-          <h1 className="text-3xl font-semibold">Configurações</h1>
+          <div className="flex items-center gap-4">
+            <Link href="/" legacyBehavior passHref>
+              <Button variant="outline" size="icon">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-semibold">Configurações</h1>
+          </div>
         </div>
         <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
           <Card>
