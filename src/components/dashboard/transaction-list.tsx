@@ -38,17 +38,17 @@ export function TransactionList({
 
   const formatDate = (dateString: string) => {
     try {
-      // Handles both 'YYYY-MM-DD' and 'YYYY/MM/DD'
+      // Lida com 'YYYY-MM-DD' e 'YYYY/MM/DD'
       const sanitizedDateString = dateString.replace(/\//g, '-');
       const [year, month, day] = sanitizedDateString.split('-').map(Number);
       if (isNaN(year) || isNaN(month) || isNaN(day)) {
-        return dateString; // Return original if parsing fails
+        return dateString; // Retorna original se o parse falhar
       }
       const date = new Date(Date.UTC(year, month - 1, day));
       return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(date);
     } catch (e) {
       console.error('Error formatting date:', e);
-      return dateString; // Fallback to original string
+      return dateString; // Fallback para string original
     }
   };
 
@@ -94,9 +94,22 @@ export function TransactionList({
                           {formatCurrency(transaction.amount)}
                         </TableCell>
                         <TableCell>
-                          <Select onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)} value={category?.id}>
+                          <Select
+                            onValueChange={(value) => onUpdateTransactionCategory(transaction.id, value)}
+                            value={category?.id}
+                            disabled={transaction.amount > 0}
+                          >
                              <SelectTrigger>
-                               <SelectValue placeholder="Selecione a categoria" />
+                               <SelectValue>
+                                {category ? (
+                                    <div className="flex items-center gap-2">
+                                      <category.icon className="h-4 w-4" style={{ color: category.color }} />
+                                      {category.name}
+                                    </div>
+                                  ) : (
+                                    'Selecione a categoria'
+                                  )}
+                               </SelectValue>
                              </SelectTrigger>
                             <SelectContent>
                               {categories.map((cat) => (
@@ -111,7 +124,7 @@ export function TransactionList({
                           </Select>
                         </TableCell>
                         <TableCell className="text-center">
-                          {!category && (
+                          {!category && transaction.amount < 0 && (
                             <Button
                               variant="ghost"
                               size="icon"

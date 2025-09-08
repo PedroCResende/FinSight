@@ -3,44 +3,41 @@
 import * as React from "react"
 import { Pie, PieChart, Cell, Tooltip, ResponsiveContainer } from "recharts"
 
-import type { Transaction, Category } from "@/lib/types"
+import type { Transaction } from "@/lib/types"
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-interface SpendingChartProps {
+interface IncomeChartProps {
   transactions: Transaction[]
-  categories: Category[]
 }
 
-export function SpendingChart({ transactions, categories }: SpendingChartProps) {
-  const chartData = React.useMemo(() => {
-    const categoryTotals = transactions.reduce((acc, transaction) => {
-      // Apenas transações de saída (amount < 0) e com categoria
-      if (transaction.category && transaction.amount < 0) {
-        const categoryId = transaction.category
-        acc[categoryId] = (acc[categoryId] || 0) + Math.abs(transaction.amount)
-      }
-      return acc
-    }, {} as { [key: string]: number })
+const INCOME_COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
 
-    return Object.keys(categoryTotals).map((categoryId) => {
-      const category = categories.find((c) => c.id === categoryId)
-      return {
-        category: category?.name || "Desconhecida",
-        amount: categoryTotals[categoryId],
-        fill: category?.color || 'hsl(var(--muted-foreground))',
-      }
-    })
-  }, [transactions, categories])
+export function IncomeChart({ transactions }: IncomeChartProps) {
+  const chartData = React.useMemo(() => {
+    return transactions
+      .filter(transaction => transaction.amount > 0)
+      .map((transaction, index) => ({
+        source: transaction.description,
+        amount: transaction.amount,
+        fill: INCOME_COLORS[index % INCOME_COLORS.length],
+      }));
+  }, [transactions])
 
   const chartConfig = React.useMemo(() => {
     const config: ChartConfig = {}
     chartData.forEach((data) => {
-      config[data.category] = {
-        label: data.category,
+      config[data.source] = {
+        label: data.source,
         color: data.fill,
       }
     })
@@ -50,7 +47,7 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
   if (chartData.length === 0) {
     return (
       <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
-        Nenhum dado de despesa disponível.
+        Nenhum dado de entrada disponível.
       </div>
     )
   }
@@ -65,7 +62,7 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
               const formattedValue = value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
               return (
                 <div className="flex flex-col">
-                  <span>{props.payload.category}</span>
+                  <span>{props.payload.source}</span>
                   <span className="font-bold">{formattedValue}</span>
                 </div>
               )
@@ -74,7 +71,7 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
           <Pie
             data={chartData}
             dataKey="amount"
-            nameKey="category"
+            nameKey="source"
             innerRadius={60}
             strokeWidth={5}
           >
