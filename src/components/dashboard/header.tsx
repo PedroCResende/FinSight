@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   Avatar,
   AvatarFallback,
@@ -12,14 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, PiggyBank } from "lucide-react"
+import { LogOut, PiggyBank, Settings } from "lucide-react"
 
 export function Header() {
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
       <nav className="flex w-full flex-row items-center justify-between">
         <a
-          href="#"
+          href="/"
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
           <PiggyBank className="h-6 w-6 text-primary" />
@@ -39,7 +40,12 @@ export function Header() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <Link href="/settings">
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
