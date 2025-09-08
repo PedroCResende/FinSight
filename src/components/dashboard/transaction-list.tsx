@@ -62,16 +62,16 @@ export function TransactionList({
                     const category = transaction.category ? getCategoryFromId(transaction.category) : null;
                     return (
                       <TableRow key={transaction.id}>
-                        <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(transaction.date).toLocaleDateString('pt-BR')}</TableCell>
                         <TableCell className="font-medium">{transaction.description}</TableCell>
                         <TableCell
                           className={`text-right font-semibold ${
                             transaction.amount < 0 ? 'text-red-400' : 'text-green-400'
                           }`}
                         >
-                          {transaction.amount.toLocaleString('en-US', {
+                          {transaction.amount.toLocaleString('pt-BR', {
                             style: 'currency',
-                            currency: 'USD',
+                            currency: 'BRL',
                           })}
                         </TableCell>
                         <TableCell>
