@@ -35,3 +35,13 @@ export interface UserAchievement {
     achievementId: string;
     unlockedAt: Date;
 }
+
+export interface Goal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  savedAmount: number;
+  deadline: Date;
+  status: 'in-progress' | 'completed' | 'failed';
+  createdAt: Date;
+}

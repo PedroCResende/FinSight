@@ -1,6 +1,6 @@
-import type { Category, Transaction, Budget } from './types';
+import type { Category, Transaction, Budget, Goal } from './types';
 import { Home, UtensilsCrossed, ShoppingBag, Car, Film } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { format, subDays, addMonths, startOfDay } from 'date-fns';
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat_1', name: 'Supermercado', icon: ShoppingBag, color: 'hsl(142.1, 76.2%, 36.3%)' },
@@ -28,4 +28,43 @@ export const MOCK_BUDGETS: Budget[] = [
     { id: 'bud_2', categoryId: 'cat_2', limit: 100, current: 0, month: format(today, 'yyyy-MM') },
     { id: 'bud_3', categoryId: 'cat_4', limit: 150, current: 0, month: format(today, 'yyyy-MM') },
     { id: 'bud_4', categoryId: 'cat_5', limit: 80, current: 0, month: format(today, 'yyyy-MM') },
+];
+
+export const MOCK_GOALS: Goal[] = [
+  {
+    id: 'goal_1',
+    title: 'Viagem para a Amazônia',
+    targetAmount: 5000,
+    savedAmount: 1200,
+    deadline: addMonths(startOfDay(today), 6),
+    status: 'in-progress',
+    createdAt: subDays(startOfDay(today), 60),
+  },
+  {
+    id: 'goal_2',
+    title: 'Comprar um Notebook Novo',
+    targetAmount: 8000,
+    savedAmount: 7500,
+    deadline: addMonths(startOfDay(today), 1),
+    status: 'in-progress',
+    createdAt: subDays(startOfDay(today), 120),
+  },
+    {
+    id: 'goal_3',
+    title: 'Fundo de Emergência',
+    targetAmount: 10000,
+    savedAmount: 10000,
+    deadline: addMonths(startOfDay(today), 12),
+    status: 'completed',
+    createdAt: subDays(startOfDay(today), 300),
+  },
+  {
+    id: 'goal_4',
+    title: 'Curso de Culinária',
+    targetAmount: 800,
+    savedAmount: 200,
+    deadline: subDays(startOfDay(today), 10), // Prazo já passou
+    status: 'failed',
+    createdAt: subDays(startOfDay(today), 90),
+  },
 ];

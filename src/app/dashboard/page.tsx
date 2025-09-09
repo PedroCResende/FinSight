@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Transaction, Category, Budget, UserAchievement } from '@/lib/types';
+import type { Transaction, Category, Budget, UserAchievement, Goal } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { IncomeChart } from '@/components/dashboard/income-chart';
@@ -10,7 +10,7 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS } from '@/lib/mock-data';
+import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
@@ -18,6 +18,7 @@ import { AchievementsDisplay } from '@/components/dashboard/achievements-display
 import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
+import { GoalCard } from '@/components/dashboard/goal-card';
 import { LayoutGrid, List } from 'lucide-react';
 
 // Custom hook to check for achievements
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
+  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
   const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -98,6 +100,10 @@ export default function DashboardPage() {
         };
       });
   }, [budgets, transactions]);
+  
+  const activeGoals = useMemo(() => {
+      return goals.filter(goal => goal.status === 'in-progress');
+  }, [goals]);
 
 
   return (
@@ -168,6 +174,24 @@ export default function DashboardPage() {
             </div>
         </div>
        )}
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Suas Metas Financeiras</CardTitle>
+                <CardDescription>Acompanhe o progresso em direção aos seus objetivos.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 {activeGoals.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {activeGoals.map(goal => (
+                            <GoalCard key={goal.id} goal={goal} />
+                        ))}
+                    </div>
+                 ) : (
+                    <p className="text-center text-muted-foreground">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>
+                 )}
+            </CardContent>
+        </Card>
 
         <Card>
             <CardHeader>
