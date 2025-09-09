@@ -128,7 +128,7 @@ export default function GoalsPage() {
               {goals.map(goal => (
                 <div key={goal.id} className="relative group">
                   <GoalCard goal={goal} onContributeClick={() => setContributionGoal(goal)} />
-                   <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="absolute top-2 right-14 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(goal)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
