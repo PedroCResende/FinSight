@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { differenceInDays, differenceInMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Target, AlertCircle, PartyPopper, Frown, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface GoalCardProps {
   goal: Goal;
