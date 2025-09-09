@@ -243,9 +243,9 @@ export default function DashboardPage() {
                         }}
                         className="w-full"
                         >
-                        <CarouselContent>
+                        <CarouselContent className="-ml-1">
                             {activeGoals.map(goal => (
-                               <CarouselItem key={goal.id} className="md:basis-1/2 lg:basis-1/3">
+                               <CarouselItem key={goal.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
                                     <div className="p-1 h-full">
                                         <GoalCard 
                                             goal={goal} 
@@ -256,8 +256,8 @@ export default function DashboardPage() {
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
-                         <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
-                        <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
+                        <CarouselPrevious className="hidden sm:flex" />
+                        <CarouselNext className="hidden sm:flex" />
                     </Carousel>
                  ) : (
                     <p className="text-center text-muted-foreground py-10">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>
