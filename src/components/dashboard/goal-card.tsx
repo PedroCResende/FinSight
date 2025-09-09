@@ -8,15 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { differenceInDays, differenceInMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Target, AlertCircle, PartyPopper, Frown, Info, PlusCircle } from 'lucide-react';
+import { Target, AlertCircle, PartyPopper, Frown, Info, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GoalCardProps {
   goal: Goal;
   onContributeClick?: (goal: Goal) => void;
+  onEditClick?: (goal: Goal) => void;
+  onDeleteClick?: (goalId: string) => void;
+  className?: string;
 }
 
-export function GoalCard({ goal, onContributeClick }: GoalCardProps) {
+export function GoalCard({ goal, onContributeClick, onEditClick, onDeleteClick, className }: GoalCardProps) {
   const { title, targetAmount, savedAmount, deadline, status, createdAt } = goal;
 
   const percentage = targetAmount > 0 ? (savedAmount / targetAmount) * 100 : 0;
@@ -69,17 +72,34 @@ export function GoalCard({ goal, onContributeClick }: GoalCardProps) {
 
   return (
     <Card className={cn(
-        "flex flex-col h-full",
+        "flex flex-col h-full group",
         status === 'completed' && 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
         status === 'failed' && 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-80',
+        className
     )}>
       <CardHeader>
-        <div className="flex justify-between items-start">
-            <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                {title}
-            </CardTitle>
-            {getStatusBadge()}
+        <div className="flex justify-between items-start gap-2">
+            <div className="flex-1">
+                <CardTitle className="text-lg flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <span className="flex-1">{title}</span>
+                </CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="hidden group-hover:flex gap-1">
+                  {onEditClick && (
+                      <Button variant="ghost" size="icon" onClick={() => onEditClick(goal)}>
+                          <Pencil className="h-4 w-4" />
+                      </Button>
+                  )}
+                  {onDeleteClick && (
+                      <Button variant="ghost" size="icon" onClick={() => onDeleteClick(goal.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                  )}
+              </div>
+              <div className="flex-shrink-0">{getStatusBadge()}</div>
+            </div>
         </div>
         <CardDescription>
           Prazo: {format(deadline, 'dd/MM/yyyy', { locale: ptBR })}

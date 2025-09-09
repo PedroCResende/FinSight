@@ -126,17 +126,13 @@ export default function GoalsPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {goals.map(goal => (
-                <div key={goal.id} className="relative group">
-                  <GoalCard goal={goal} onContributeClick={() => setContributionGoal(goal)} />
-                   <div className="absolute top-2 right-14 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(goal)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(goal.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                </div>
+                <GoalCard 
+                  key={goal.id} 
+                  goal={goal} 
+                  onContributeClick={setContributionGoal}
+                  onEditClick={openDialogForEdit}
+                  onDeleteClick={handleDelete}
+                />
               ))}
               {goals.length === 0 && (
                 <p className="p-4 text-center text-muted-foreground col-span-full">Nenhuma meta encontrada.</p>
