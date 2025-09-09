@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, BrainCircuit, Settings, Target } from "lucide-react"
+import { LogOut, PiggyBank, Settings, Target } from "lucide-react"
 
 export function Header() {
   return (
@@ -24,7 +24,7 @@ export function Header() {
             href="/dashboard"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
             >
-            <BrainCircuit className="h-6 w-6 text-primary" />
+            <PiggyBank className="h-6 w-6 text-primary" />
             <span className="font-headline text-xl">FinSight</span>
             </a>
             <div className="hidden md:flex items-center gap-2">
