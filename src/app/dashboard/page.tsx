@@ -10,11 +10,11 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
+import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS, MOCK_GOALS, MOCK_USER_ACHIEVEMENTS } from '@/lib/mock-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
-import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
 import { GoalCard } from '@/components/dashboard/goal-card';
@@ -32,29 +32,71 @@ import {
 import { Button } from '@/components/ui/button';
 import { SmartQuery } from '@/components/dashboard/smart-query';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 // Custom hook to check for achievements
-const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
+const useCheckAchievements = (
+    transactions: Transaction[], 
+    setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>,
+    toast: (options: { title: string; description: string }) => void
+) => {
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
   useEffect(() => {
+    if (initialCheckDone) return;
+
+    const checkAndNotify = (achievementId: string) => {
+        setUnlockedAchievements(prev => {
+            if (!prev.some(a => a.achievementId === achievementId)) {
+                const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
+                 if (achievement) {
+                    toast({
+                        title: '🏆 Conquista Desbloqueada!',
+                        description: `Você ganhou: "${achievement.title}"`,
+                    });
+                }
+                return [...prev, { achievementId: achievementId, unlockedAt: new Date() }];
+            }
+            return prev;
+        });
+    }
+
     // Check for "Primeira Conquista"
     const hasCategorizedTransaction = transactions.some(t => t.category);
     if (hasCategorizedTransaction) {
-      setUnlockedAchievements(prev => {
-        if (!prev.some(a => a.achievementId === 'ach_1')) {
-          return [...prev, { achievementId: 'ach_1', unlockedAt: new Date() }];
-        }
-        return prev;
-      });
+        checkAndNotify('ach_1');
     }
-     // Add more checks here for other achievements in the future
-  }, [transactions, setUnlockedAchievements]);
+
+    // Add more achievement checks here in the future
+
+    setInitialCheckDone(true); // Ensure checks run only once on initial load for existing data
+  }, [transactions, setUnlockedAchievements, toast, initialCheckDone]);
+
+  // Separate effect to handle new categorizations after initial load
+  useEffect(() => {
+    const hasCategorizedTransaction = transactions.some(t => t.category);
+    if (hasCategorizedTransaction) {
+       setUnlockedAchievements(prev => {
+            if (!prev.some(a => a.achievementId === 'ach_1')) {
+                const achievement = ALL_ACHIEVEMENTS.find(a => a.id === 'ach_1');
+                 if (achievement) {
+                    toast({
+                        title: '🏆 Conquista Desbloqueada!',
+                        description: `Você ganhou: "${achievement.title}"`,
+                    });
+                }
+                return [...prev, { achievementId: 'ach_1', unlockedAt: new Date() }];
+            }
+            return prev;
+        });
+    }
+  }, [transactions, setUnlockedAchievements, toast]);
 };
 
 
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
-  const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
   const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
   const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,9 +109,10 @@ export default function DashboardPage() {
 
   const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
+  const { toast } = useToast();
 
 
-  useCheckAchievements(transactions, setUnlockedAchievements);
+  useCheckAchievements(transactions, setUnlockedAchievements, toast);
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
