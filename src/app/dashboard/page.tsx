@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Transaction, Category } from '@/lib/types';
+import type { Transaction, Category, Budget } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { IncomeChart } from '@/components/dashboard/income-chart';
@@ -10,13 +10,15 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_CATEGORIES, MOCK_TRANSACTIONS } from '@/lib/mock-data';
+import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS } from '@/lib/mock-data';
 import type { DateRange } from 'react-day-picker';
-import { subDays } from 'date-fns';
+import { subDays, format } from 'date-fns';
+import { BudgetCard } from '@/components/dashboard/budget-card';
 
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
    const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -55,6 +57,21 @@ export default function DashboardPage() {
     });
   }, [transactions, searchTerm, categoryFilter, dateRange]);
 
+  const activeBudgets = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    return budgets
+      .filter(budget => budget.month === currentMonth)
+      .map(budget => {
+        const spent = transactions
+          .filter(t => t.category === budget.categoryId && t.amount < 0 && format(new Date(t.date), 'yyyy-MM') === currentMonth)
+          .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+        return {
+          ...budget,
+          current: spent,
+        };
+      });
+  }, [budgets, transactions]);
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -80,6 +97,24 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Orçamentos do Mês</CardTitle>
+            <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {activeBudgets.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {activeBudgets.map(budget => (
+                  <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Vá para a página de orçamentos para criar um.</p>
+            )}
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="transactions" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

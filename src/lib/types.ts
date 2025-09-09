@@ -14,3 +14,11 @@ export interface Transaction {
   amount: number;
   category?: Category['id'];
 }
+
+export interface Budget {
+    id: string;
+    categoryId: Category['id'];
+    limit: number;
+    current: number; // This will be calculated on the fly for the mock version
+    month: string; // YYYY-MM
+}

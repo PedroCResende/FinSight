@@ -1,4 +1,4 @@
-import type { Category, Transaction } from './types';
+import type { Category, Transaction, Budget } from './types';
 import { Home, UtensilsCrossed, ShoppingBag, Car, Film } from 'lucide-react';
 
 export const MOCK_CATEGORIES: Category[] = [
@@ -18,4 +18,11 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 'tx_6', date: '2024-07-11', description: 'Contas de Consumo', amount: -120.0, category: 'cat_3' },
   { id: 'tx_7', date: '2024-07-10', description: 'Starbucks', amount: -5.75 },
   { id: 'tx_8', date: '2024-07-09', description: 'Depósito de Salário', amount: 2500.00 },
+];
+
+export const MOCK_BUDGETS: Budget[] = [
+    { id: 'bud_1', categoryId: 'cat_1', limit: 300, current: 0, month: '2024-07' },
+    { id: 'bud_2', categoryId: 'cat_2', limit: 100, current: 0, month: '2024-07' },
+    { id: 'bud_3', categoryId: 'cat_4', limit: 150, current: 0, month: '2024-07' },
+    { id: 'bud_4', categoryId: 'cat_5', limit: 80, current: 0, month: '2024-07' },
 ];
