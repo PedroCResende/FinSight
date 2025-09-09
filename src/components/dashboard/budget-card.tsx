@@ -18,6 +18,7 @@ export function BudgetCard({ budget, category }: BudgetCardProps) {
 
   const { limit, current } = budget;
   const percentage = limit > 0 ? (current / limit) * 100 : 0;
+  const displayPercentage = Math.min(percentage, 100);
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -46,7 +47,7 @@ export function BudgetCard({ budget, category }: BudgetCardProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Progress value={percentage} indicatorClassName={getProgressColor()} />
+          <Progress value={displayPercentage} indicatorClassName={getProgressColor()} />
           <p className="text-xs text-muted-foreground text-right">{Math.round(percentage)}% Gasto</p>
         </div>
         
