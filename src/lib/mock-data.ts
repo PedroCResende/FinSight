@@ -1,5 +1,6 @@
 import type { Category, Transaction, Budget } from './types';
 import { Home, UtensilsCrossed, ShoppingBag, Car, Film } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat_1', name: 'Supermercado', icon: ShoppingBag, color: 'hsl(142.1, 76.2%, 36.3%)' },
@@ -9,20 +10,22 @@ export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat_5', name: 'Lazer', icon: Film, color: 'hsl(262.1, 83.3%, 57.8%)' },
 ];
 
+const today = new Date();
+
 export const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 'tx_1', date: '2024-07-15', description: 'Supermercado Exemplo', amount: -75.4, category: 'cat_1' },
-  { id: 'tx_2', date: '2024-07-14', description: 'Restaurante Exemplo', amount: -15.25, category: 'cat_2' },
-  { id: 'tx_3', date: '2024-07-14', description: 'Assinatura Netflix', amount: -19.99, category: 'cat_5' },
-  { id: 'tx_4', date: '2024-07-13', description: 'Posto Shell', amount: -55.0, category: 'cat_4' },
-  { id: 'tx_5', date: '2024-07-12', description: 'Spotify', amount: -10.99 },
-  { id: 'tx_6', date: '2024-07-11', description: 'Contas de Consumo', amount: -120.0, category: 'cat_3' },
-  { id: 'tx_7', date: '2024-07-10', description: 'Starbucks', amount: -5.75 },
-  { id: 'tx_8', date: '2024-07-09', description: 'Depósito de Salário', amount: 2500.00 },
+  { id: 'tx_1', date: format(subDays(today, 1), 'yyyy-MM-dd'), description: 'Supermercado Exemplo', amount: -75.4, category: 'cat_1' },
+  { id: 'tx_2', date: format(subDays(today, 2), 'yyyy-MM-dd'), description: 'Restaurante Exemplo', amount: -15.25, category: 'cat_2' },
+  { id: 'tx_3', date: format(subDays(today, 2), 'yyyy-MM-dd'), description: 'Assinatura Netflix', amount: -19.99, category: 'cat_5' },
+  { id: 'tx_4', date: format(subDays(today, 3), 'yyyy-MM-dd'), description: 'Posto Shell', amount: -55.0, category: 'cat_4' },
+  { id: 'tx_5', date: format(subDays(today, 4), 'yyyy-MM-dd'), description: 'Spotify', amount: -10.99 },
+  { id: 'tx_6', date: format(subDays(today, 5), 'yyyy-MM-dd'), description: 'Contas de Consumo', amount: -120.0, category: 'cat_3' },
+  { id: 'tx_7', date: format(subDays(today, 6), 'yyyy-MM-dd'), description: 'Starbucks', amount: -5.75 },
+  { id: 'tx_8', date: format(subDays(today, 8), 'yyyy-MM-dd'), description: 'Depósito de Salário', amount: 2500.00 },
 ];
 
 export const MOCK_BUDGETS: Budget[] = [
-    { id: 'bud_1', categoryId: 'cat_1', limit: 300, current: 0, month: '2024-07' },
-    { id: 'bud_2', categoryId: 'cat_2', limit: 100, current: 0, month: '2024-07' },
-    { id: 'bud_3', categoryId: 'cat_4', limit: 150, current: 0, month: '2024-07' },
-    { id: 'bud_4', categoryId: 'cat_5', limit: 80, current: 0, month: '2024-07' },
+    { id: 'bud_1', categoryId: 'cat_1', limit: 300, current: 0, month: format(today, 'yyyy-MM') },
+    { id: 'bud_2', categoryId: 'cat_2', limit: 100, current: 0, month: format(today, 'yyyy-MM') },
+    { id: 'bud_3', categoryId: 'cat_4', limit: 150, current: 0, month: format(today, 'yyyy-MM') },
+    { id: 'bud_4', categoryId: 'cat_5', limit: 80, current: 0, month: format(today, 'yyyy-MM') },
 ];
