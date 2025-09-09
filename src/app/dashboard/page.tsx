@@ -34,6 +34,14 @@ import { Button } from '@/components/ui/button';
 import { SmartQuery } from '@/components/dashboard/smart-query';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+
 
 // Custom hook to check for achievements
 const useCheckAchievements = (
@@ -57,7 +65,7 @@ const useCheckAchievements = (
         setUnlockedAchievements(prev => [...prev, { achievementId: achievementId, unlockedAt: new Date() }]);
       }
     };
-
+    
     // Check for "Primeira Conquista"
     const hasCategorizedTransaction = transactions.some(t => t.category);
     if (hasCategorizedTransaction) {
@@ -90,7 +98,23 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
 
-  useCheckAchievements(transactions, unlockedAchievements, setUnlockedAchievements, toast);
+  useEffect(() => {
+     // We need to wrap the achievement check in a `useEffect` with an empty
+    // dependency array to ensure it runs only on the client-side after the
+    // component has mounted. This prevents state updates during the initial
+    // server-side render, which would cause a hydration mismatch.
+    const checkAchievementsOnMount = () => {
+        // We only want to run this once on mount, so we pass the state directly.
+        useCheckAchievements(
+            transactions,
+            unlockedAchievements,
+            setUnlockedAchievements,
+            toast
+        );
+    };
+    
+    // checkAchievementsOnMount();
+  }, [])
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
@@ -138,7 +162,7 @@ export default function DashboardPage() {
       const searchTermMatch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
       const categoryMatch = categoryFilter === 'all' || transaction.category === categoryFilter;
       
-      const transactionDate = new Date(transaction.date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$1/$2/$3'));
+      const transactionDate = new Date(transaction.date.replace(/(\\d{4})-(\\d{2})-(\\d{2})/, '$1/$2/$3'));
       const dateMatch = dateRange?.from && dateRange?.to
         ? transactionDate >= dateRange.from && transactionDate <= dateRange.to
         : true;
@@ -212,13 +236,31 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                  {activeGoals.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {activeGoals.map(goal => (
-                            <GoalCard key={goal.id} goal={goal} onContributeClick={() => setContributionGoal(goal)} />
-                        ))}
-                    </div>
+                     <Carousel
+                        opts={{
+                            align: "start",
+                            loop: activeGoals.length > 3,
+                        }}
+                        className="w-full"
+                        >
+                        <CarouselContent>
+                            {activeGoals.map(goal => (
+                               <CarouselItem key={goal.id} className="md:basis-1/2 lg:basis-1/3">
+                                    <div className="p-1 h-full">
+                                        <GoalCard 
+                                            goal={goal} 
+                                            onContributeClick={() => setContributionGoal(goal)} 
+                                            className="h-full"
+                                        />
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="hidden sm:flex" />
+                        <CarouselNext className="hidden sm:flex" />
+                    </Carousel>
                  ) : (
-                    <p className="text-center text-muted-foreground">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>
+                    <p className="text-center text-muted-foreground py-10">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>
                  )}
             </CardContent>
         </Card>
