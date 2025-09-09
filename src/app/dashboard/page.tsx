@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Transaction, Category } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
@@ -15,6 +15,8 @@ import { MOCK_CATEGORIES, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
     const newTxsWithIds = newTransactions.map((tx, index) => ({
@@ -31,6 +33,15 @@ export default function DashboardPage() {
       )
     );
   };
+  
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(transaction => {
+      const searchTermMatch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const categoryMatch = categoryFilter === 'all' || transaction.category === categoryFilter;
+      return searchTermMatch && categoryMatch;
+    });
+  }, [transactions, searchTerm, categoryFilter]);
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -66,9 +77,13 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <TransactionUploader onUpload={handleSetTransactions} />
               <TransactionList
-                transactions={transactions}
+                transactions={filteredTransactions}
                 categories={categories}
                 onUpdateTransactionCategory={updateTransactionCategory}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                categoryFilter={categoryFilter}
+                setCategoryFilter={setCategoryFilter}
               />
             </div>
           </TabsContent>

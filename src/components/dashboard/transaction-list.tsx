@@ -17,7 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Sparkles, Search } from 'lucide-react';
 import type { Transaction, Category } from '@/lib/types';
 import { SmartCategoryDialog } from './smart-category-dialog';
 
@@ -25,12 +26,20 @@ interface TransactionListProps {
   transactions: Transaction[];
   categories: Category[];
   onUpdateTransactionCategory: (transactionId: string, categoryId: string) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (categoryId: string) => void;
 }
 
 export function TransactionList({
   transactions,
   categories,
   onUpdateTransactionCategory,
+  searchTerm,
+  setSearchTerm,
+  categoryFilter,
+  setCategoryFilter,
 }: TransactionListProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
@@ -65,7 +74,33 @@ export function TransactionList({
           <CardTitle>Transações</CardTitle>
           <CardDescription>Visualize e categorize suas transações recentes.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+           <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar por descrição..."
+                className="pl-8 sm:w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Categorias</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
