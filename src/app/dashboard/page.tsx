@@ -99,12 +99,7 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-     // We need to wrap the achievement check in a `useEffect` with an empty
-    // dependency array to ensure it runs only on the client-side after the
-    // component has mounted. This prevents state updates during the initial
-    // server-side render, which would cause a hydration mismatch.
     const checkAchievementsOnMount = () => {
-        // We only want to run this once on mount, so we pass the state directly.
         useCheckAchievements(
             transactions,
             unlockedAchievements,
@@ -113,7 +108,7 @@ export default function DashboardPage() {
         );
     };
     
-    // checkAchievementsOnMount();
+    checkAchievementsOnMount();
   }, [])
 
 
