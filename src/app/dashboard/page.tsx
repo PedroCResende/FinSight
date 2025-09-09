@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -37,60 +38,37 @@ import { useToast } from '@/hooks/use-toast';
 // Custom hook to check for achievements
 const useCheckAchievements = (
     transactions: Transaction[], 
+    unlockedAchievements: UserAchievement[],
     setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>,
     toast: (options: { title: string; description: string }) => void
 ) => {
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
-
   useEffect(() => {
-    if (initialCheckDone) return;
-
     const checkAndNotify = (achievementId: string) => {
-        setUnlockedAchievements(prev => {
-            if (!prev.some(a => a.achievementId === achievementId)) {
-                const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
-                 if (achievement) {
-                    toast({
-                        title: '🏆 Conquista Desbloqueada!',
-                        description: `Você ganhou: "${achievement.title}"`,
-                    });
-                }
-                return [...prev, { achievementId: achievementId, unlockedAt: new Date() }];
-            }
-            return prev;
-        });
-    }
+      // Check if achievement is already unlocked to prevent multiple toasts
+      if (!unlockedAchievements.some(a => a.achievementId === achievementId)) {
+        const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
+        if (achievement) {
+          toast({
+            title: '🏆 Conquista Desbloqueada!',
+            description: `Você ganhou: "${achievement.title}"`,
+          });
+        }
+        // Update the state
+        setUnlockedAchievements(prev => [...prev, { achievementId: achievementId, unlockedAt: new Date() }]);
+      }
+    };
 
     // Check for "Primeira Conquista"
     const hasCategorizedTransaction = transactions.some(t => t.category);
     if (hasCategorizedTransaction) {
-        checkAndNotify('ach_1');
+      checkAndNotify('ach_1');
     }
 
     // Add more achievement checks here in the future
 
-    setInitialCheckDone(true); // Ensure checks run only once on initial load for existing data
-  }, [transactions, setUnlockedAchievements, toast, initialCheckDone]);
-
-  // Separate effect to handle new categorizations after initial load
-  useEffect(() => {
-    const hasCategorizedTransaction = transactions.some(t => t.category);
-    if (hasCategorizedTransaction) {
-       setUnlockedAchievements(prev => {
-            if (!prev.some(a => a.achievementId === 'ach_1')) {
-                const achievement = ALL_ACHIEVEMENTS.find(a => a.id === 'ach_1');
-                 if (achievement) {
-                    toast({
-                        title: '🏆 Conquista Desbloqueada!',
-                        description: `Você ganhou: "${achievement.title}"`,
-                    });
-                }
-                return [...prev, { achievementId: 'ach_1', unlockedAt: new Date() }];
-            }
-            return prev;
-        });
-    }
-  }, [transactions, setUnlockedAchievements, toast]);
+  // We depend on transactions and the list of unlocked achievements.
+  // This ensures the check re-runs if a new transaction is added or an achievement is unlocked by other means.
+  }, [transactions, unlockedAchievements, setUnlockedAchievements, toast]);
 };
 
 
@@ -112,7 +90,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
 
-  useCheckAchievements(transactions, setUnlockedAchievements, toast);
+  useCheckAchievements(transactions, unlockedAchievements, setUnlockedAchievements, toast);
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
@@ -322,5 +300,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
