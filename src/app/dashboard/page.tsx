@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { SmartQuery } from '@/components/dashboard/smart-query';
 
 // Custom hook to check for achievements
 const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
@@ -149,6 +150,8 @@ export default function DashboardPage() {
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+
+        <SmartQuery transactions={transactions} categories={categories} goals={goals} />
 
         <div className="flex justify-end">
             <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
