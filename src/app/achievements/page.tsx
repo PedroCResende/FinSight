@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { ALL_ACHIEVEMENTS, MOCK_USER_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { UserAchievement } from '@/lib/types';
 import { cn } from '@/lib/utils';
