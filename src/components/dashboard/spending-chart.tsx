@@ -9,6 +9,7 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { CardDescription } from "../ui/card";
 
 interface SpendingChartProps {
   transactions: Transaction[]
@@ -32,6 +33,7 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
         category: category?.name || "Desconhecida",
         amount: categoryTotals[categoryId],
         fill: category?.color || 'hsl(var(--muted-foreground))',
+        icon: category?.icon,
       }
     })
   }, [transactions, categories])
@@ -42,6 +44,7 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
       config[data.category] = {
         label: data.category,
         color: data.fill,
+        icon: data.icon
       }
     })
     return config
@@ -49,8 +52,9 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
-        Nenhum dado de despesa disponível.
+      <div className="flex h-[250px] w-full flex-col items-center justify-center gap-2 text-center">
+        <CardDescription>Nenhum dado de despesa para exibir.</CardDescription>
+        <p className="text-sm text-muted-foreground">Tente ajustar o período ou os filtros.</p>
       </div>
     )
   }
@@ -65,8 +69,8 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
               const formattedValue = value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
               return (
                 <div className="flex flex-col">
-                  <span>{props.payload.category}</span>
-                  <span className="font-bold">{formattedValue}</span>
+                  <span className="font-medium">{props.payload.category}</span>
+                  <span className="text-foreground">{formattedValue}</span>
                 </div>
               )
             }} />}
@@ -77,9 +81,10 @@ export function SpendingChart({ transactions, categories }: SpendingChartProps) 
             nameKey="category"
             innerRadius={60}
             strokeWidth={5}
+            paddingAngle={2}
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
+              <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" />
             ))}
           </Pie>
         </PieChart>

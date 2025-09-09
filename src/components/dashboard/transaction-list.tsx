@@ -18,9 +18,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Search } from 'lucide-react';
+import { Sparkles, Search, Download } from 'lucide-react';
 import type { Transaction, Category } from '@/lib/types';
 import { SmartCategoryDialog } from './smart-category-dialog';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateRange } from 'react-day-picker';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -30,6 +32,8 @@ interface TransactionListProps {
   setSearchTerm: (term: string) => void;
   categoryFilter: string;
   setCategoryFilter: (categoryId: string) => void;
+  dateRange: DateRange | undefined;
+  setDateRange: (dateRange: DateRange | undefined) => void;
 }
 
 export function TransactionList({
@@ -40,6 +44,8 @@ export function TransactionList({
   setSearchTerm,
   categoryFilter,
   setCategoryFilter,
+  dateRange,
+  setDateRange,
 }: TransactionListProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
@@ -47,13 +53,12 @@ export function TransactionList({
 
   const formatDate = (dateString: string) => {
     try {
-      const sanitizedDateString = dateString.replace(/\//g, '-');
-      const [year, month, day] = sanitizedDateString.split('-').map(Number);
-      if (isNaN(year) || isNaN(month) || isNaN(day)) {
-        return dateString;
-      }
-      const date = new Date(Date.UTC(year, month - 1, day));
-      return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(date);
+      // Handles both yyyy-mm-dd and yyyy/mm/dd
+      const sanitizedDateString = dateString.replace(/-/g, '/');
+      const date = new Date(sanitizedDateString);
+      // Adjust for timezone to prevent off-by-one day errors
+      const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR');
     } catch (e) {
       console.error('Error formatting date:', e);
       return dateString;
@@ -66,6 +71,37 @@ export function TransactionList({
       currency: 'BRL',
     });
   }
+  
+  const handleExportCSV = () => {
+    const getCategoryName = (categoryId?: string) => {
+      if (!categoryId) return 'N/A';
+      return getCategoryFromId(categoryId)?.name || 'Desconhecida';
+    };
+
+    const headers = ['Data', 'Descrição', 'Valor', 'Categoria'];
+    const csvContent = [
+      headers.join(','),
+      ...transactions.map(t => [
+        formatDate(t.date),
+        `"${t.description.replace(/"/g, '""')}"`, // Handle quotes in description
+        t.amount,
+        getCategoryName(t.category),
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'transacoes.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
 
   return (
     <>
@@ -97,8 +133,18 @@ export function TransactionList({
                     {cat.name}
                   </SelectItem>
                 ))}
+                <SelectItem value="uncategorized">Sem Categoria</SelectItem>
               </SelectContent>
             </Select>
+            <DateRangePicker 
+                date={dateRange}
+                onDateChange={setDateRange}
+                className="w-full sm:w-auto"
+            />
+            <Button onClick={handleExportCSV} variant="outline" className="w-full sm:w-auto">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-md border">
@@ -122,7 +168,7 @@ export function TransactionList({
                         <TableCell className="font-medium">{transaction.description}</TableCell>
                         <TableCell
                           className={`text-right font-semibold ${
-                            transaction.amount < 0 ? 'text-red-400' : 'text-green-400'
+                            transaction.amount < 0 ? 'text-red-500' : 'text-green-500'
                           }`}
                         >
                           {formatCurrency(transaction.amount)}
@@ -134,15 +180,16 @@ export function TransactionList({
                             disabled={transaction.amount > 0}
                           >
                              <SelectTrigger
+                              className={!category ? 'text-muted-foreground' : ''}
                               style={{
                                 borderColor: category?.color,
-                                borderWidth: category ? '2px' : '',
+                                borderWidth: category ? '1px' : '',
                               }}
                             >
                                <SelectValue>
                                 {category ? (
                                     <div className="flex items-center gap-2">
-                                      <category.icon className="h-4 w-4" style={{ color: category.color }} />
+                                      {category.icon && <category.icon className="h-4 w-4" style={{ color: category.color }} />}
                                       {category.name}
                                     </div>
                                   ) : (
@@ -154,7 +201,7 @@ export function TransactionList({
                               {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.id}>
                                   <div className="flex items-center gap-2">
-                                    <cat.icon className="h-4 w-4" style={{ color: cat.color }} />
+                                    {cat.icon && <cat.icon className="h-4 w-4" style={{ color: cat.color }} />}
                                     {cat.name}
                                   </div>
                                 </SelectItem>

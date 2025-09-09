@@ -3,6 +3,7 @@
 import * as React from "react"
 import { PiggyBank } from "lucide-react"
 import type { Transaction } from "@/lib/types"
+import { CardDescription } from "../ui/card"
 
 interface IncomeChartProps {
   transactions: Transaction[]
@@ -21,12 +22,21 @@ export function IncomeChart({ transactions }: IncomeChartProps) {
       currency: 'BRL',
     });
   }
+  
+  if (totalIncome === 0) {
+    return (
+       <div className="flex h-[250px] w-full flex-col items-center justify-center gap-2 text-center">
+        <CardDescription>Nenhum dado de receita para exibir.</CardDescription>
+        <p className="text-sm text-muted-foreground">Tente ajustar o período ou os filtros.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-[250px] w-full flex-col items-center justify-center gap-4">
       <PiggyBank className="h-32 w-32 text-primary" />
       <div className="text-center">
-        <p className="text-4xl font-bold text-green-400">{formatCurrency(totalIncome)}</p>
+        <p className="text-4xl font-bold text-green-500">{formatCurrency(totalIncome)}</p>
         <p className="text-sm text-muted-foreground">Total de Entradas</p>
       </div>
     </div>
