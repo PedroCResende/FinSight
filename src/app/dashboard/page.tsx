@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Transaction, Category, Budget } from '@/lib/types';
+import { useState, useMemo, useEffect } from 'react';
+import type { Transaction, Category, Budget, UserAchievement } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { IncomeChart } from '@/components/dashboard/income-chart';
@@ -14,17 +14,40 @@ import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS } from '@/lib/mock-dat
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
+import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
+import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+
+// Custom hook to check for achievements
+const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
+  useEffect(() => {
+    // Check for "Primeira Conquista"
+    const hasCategorizedTransaction = transactions.some(t => t.category);
+    if (hasCategorizedTransaction) {
+      setUnlockedAchievements(prev => {
+        if (!prev.some(a => a.achievementId === 'ach_1')) {
+          return [...prev, { achievementId: 'ach_1', unlockedAt: new Date() }];
+        }
+        return prev;
+      });
+    }
+     // Add more checks here for other achievements in the future
+  }, [transactions, setUnlockedAchievements]);
+};
+
 
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
    const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+
+  useCheckAchievements(transactions, setUnlockedAchievements);
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
@@ -114,6 +137,21 @@ export default function DashboardPage() {
               <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Vá para a página de orçamentos para criar um.</p>
             )}
           </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Suas Conquistas</CardTitle>
+                <CardDescription>
+                    {unlockedAchievements.length}/{ALL_ACHIEVEMENTS.length} conquistas desbloqueadas
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AchievementsDisplay
+                    allAchievements={ALL_ACHIEVEMENTS}
+                    unlockedAchievementIds={unlockedAchievements.map(a => a.achievementId)}
+                />
+            </CardContent>
         </Card>
 
         <Tabs defaultValue="transactions" className="w-full">

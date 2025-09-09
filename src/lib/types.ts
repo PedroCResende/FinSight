@@ -22,3 +22,16 @@ export interface Budget {
     current: number; // This will be calculated on the fly for the mock version
     month: string; // YYYY-MM
 }
+
+export interface Achievement {
+    id: string;
+    title: string;
+    description: string;
+    icon: LucideIcon;
+    condition: string; // ex: 'firstCategorization', 'spentUnderBudget'
+}
+
+export interface UserAchievement {
+    achievementId: string;
+    unlockedAt: Date;
+}
