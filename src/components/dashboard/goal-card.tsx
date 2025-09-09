@@ -72,7 +72,7 @@ export function GoalCard({ goal, onContributeClick, onEditClick, onDeleteClick, 
 
   return (
     <Card className={cn(
-        "flex flex-col h-full group",
+        "flex flex-col h-full",
         status === 'completed' && 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
         status === 'failed' && 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-80',
         className
@@ -84,26 +84,26 @@ export function GoalCard({ goal, onContributeClick, onEditClick, onDeleteClick, 
                     <Target className="h-5 w-5 text-primary" />
                     <span className="flex-1">{title}</span>
                 </CardTitle>
+                <CardDescription className="mt-1">
+                  Prazo: {format(deadline, 'dd/MM/yyyy', { locale: ptBR })}
+                </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden group-hover:flex gap-1">
+            <div className="flex flex-col items-end gap-2">
+                <div className="flex gap-1">
                   {onEditClick && (
-                      <Button variant="ghost" size="icon" onClick={() => onEditClick(goal)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditClick(goal)}>
                           <Pencil className="h-4 w-4" />
                       </Button>
                   )}
                   {onDeleteClick && (
-                      <Button variant="ghost" size="icon" onClick={() => onDeleteClick(goal.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteClick(goal.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                   )}
-              </div>
+                </div>
               <div className="flex-shrink-0">{getStatusBadge()}</div>
             </div>
         </div>
-        <CardDescription>
-          Prazo: {format(deadline, 'dd/MM/yyyy', { locale: ptBR })}
-        </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div className="space-y-2">
