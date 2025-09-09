@@ -126,21 +126,6 @@ export default function DashboardPage() {
     });
   }, [transactions, searchTerm, categoryFilter, dateRange]);
 
-  const activeBudgets = useMemo(() => {
-    const currentMonth = format(new Date(), 'yyyy-MM');
-    return budgets
-      .filter(budget => budget.month === currentMonth)
-      .map(budget => {
-        const spent = transactions
-          .filter(t => t.category === budget.categoryId && t.amount < 0 && format(new Date(t.date), 'yyyy-MM') === currentMonth)
-          .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-        return {
-          ...budget,
-          current: spent,
-        };
-      });
-  }, [budgets, transactions]);
-  
   const activeGoals = useMemo(() => {
       return goals.filter(goal => goal.status === 'in-progress');
   }, [goals]);
@@ -185,24 +170,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Orçamentos do Mês</CardTitle>
-                    <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {activeBudgets.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {activeBudgets.map(budget => (
-                        <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
-                        ))}
-                    </div>
-                    ) : (
-                    <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Vá para a página de orçamentos para criar um.</p>
-                    )}
-                </CardContent>
-            </Card>
         </>
        )}
 

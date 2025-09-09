@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,17 +22,34 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
-import type { Budget, Category } from '@/lib/types';
-import { MOCK_BUDGETS, MOCK_CATEGORIES } from '@/lib/mock-data';
+import type { Budget, Category, Transaction } from '@/lib/types';
+import { MOCK_BUDGETS, MOCK_CATEGORIES, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { format } from 'date-fns';
+import { BudgetCard } from '@/components/dashboard/budget-card';
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
   const [categories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [transactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<Partial<Budget> | null>(null);
   const [limit, setLimit] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+
+  const activeBudgets = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    return budgets
+      .filter(budget => budget.month === currentMonth)
+      .map(budget => {
+        const spent = transactions
+          .filter(t => t.category === budget.categoryId && t.amount < 0 && format(new Date(t.date), 'yyyy-MM') === currentMonth)
+          .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+        return {
+          ...budget,
+          current: spent,
+        };
+      });
+  }, [budgets, transactions]);
 
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || 'Desconhecida';
@@ -92,6 +109,24 @@ export default function BudgetsPage() {
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+         <Card>
+            <CardHeader>
+                <CardTitle>Orçamentos do Mês</CardTitle>
+                <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {activeBudgets.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {activeBudgets.map(budget => (
+                    <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
+                    ))}
+                </div>
+                ) : (
+                <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Crie um abaixo.</p>
+                )}
+            </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
