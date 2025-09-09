@@ -13,14 +13,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PiggyBank } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
         <div className="absolute top-8 left-8 flex items-center gap-2 text-lg font-semibold md:text-base">
-            <PiggyBank className="h-6 w-6 text-primary" />
+            <BrainCircuit className="h-6 w-6 text-primary" />
             <span className="font-headline text-xl">FinSight</span>
         </div>
       <Tabs defaultValue="login" className="w-[400px]">
