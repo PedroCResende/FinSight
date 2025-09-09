@@ -20,6 +20,17 @@ import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
 import { GoalCard } from '@/components/dashboard/goal-card';
 import { LayoutGrid, List } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 // Custom hook to check for achievements
 const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
@@ -53,6 +64,10 @@ export default function DashboardPage() {
     to: new Date(),
   });
 
+  const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
+  const [contributionAmount, setContributionAmount] = useState('');
+
+
   useCheckAchievements(transactions, setUnlockedAchievements);
 
 
@@ -72,6 +87,30 @@ export default function DashboardPage() {
     );
   };
   
+    const handleAddContribution = () => {
+    if (!contributionGoal || !contributionAmount) return;
+
+    const amount = parseFloat(contributionAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setGoals(
+      goals.map(g => {
+        if (g.id === contributionGoal.id) {
+          const newSavedAmount = g.savedAmount + amount;
+          return {
+            ...g,
+            savedAmount: newSavedAmount,
+            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
+          };
+        }
+        return g;
+      })
+    );
+    setContributionGoal(null);
+    setContributionAmount('');
+  };
+
+
   const filteredTransactions = useMemo(() => {
      return transactions.filter(transaction => {
       const searchTermMatch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -184,7 +223,7 @@ export default function DashboardPage() {
                  {activeGoals.length > 0 ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {activeGoals.map(goal => (
-                            <GoalCard key={goal.id} goal={goal} />
+                            <GoalCard key={goal.id} goal={goal} onContributeClick={() => setContributionGoal(goal)} />
                         ))}
                     </div>
                  ) : (
@@ -234,6 +273,32 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+        <Dialog open={!!contributionGoal} onOpenChange={() => setContributionGoal(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Adicionar Contribuição</DialogTitle>
+                    <DialogDescription>
+                        Quanto você gostaria de adicionar à sua meta "{contributionGoal?.title}"?
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <Label htmlFor="contribution" className="text-left">Valor da Contribuição (R$)</Label>
+                    <Input 
+                        id="contribution" 
+                        type="number" 
+                        value={contributionAmount}
+                        onChange={(e) => setContributionAmount(e.target.value)}
+                        placeholder="Ex: 100.00"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setContributionGoal(null)}>Cancelar</Button>
+                    <Button onClick={handleAddContribution}>Salvar Contribuição</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

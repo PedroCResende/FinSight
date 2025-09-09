@@ -31,6 +31,10 @@ export default function GoalsPage() {
   const [targetAmount, setTargetAmount] = useState('');
   const [deadline, setDeadline] = useState<Date | undefined>();
 
+  // State for contribution dialog
+  const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
+  const [contributionAmount, setContributionAmount] = useState('');
+
   const openDialogForNew = () => {
     setCurrentGoal({});
     setTitle('');
@@ -80,6 +84,29 @@ export default function GoalsPage() {
     setIsDialogOpen(false);
   };
 
+  const handleAddContribution = () => {
+    if (!contributionGoal || !contributionAmount) return;
+
+    const amount = parseFloat(contributionAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setGoals(
+      goals.map(g => {
+        if (g.id === contributionGoal.id) {
+          const newSavedAmount = g.savedAmount + amount;
+          return {
+            ...g,
+            savedAmount: newSavedAmount,
+            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
+          };
+        }
+        return g;
+      })
+    );
+    setContributionGoal(null);
+    setContributionAmount('');
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
@@ -100,7 +127,7 @@ export default function GoalsPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {goals.map(goal => (
                 <div key={goal.id} className="relative group">
-                  <GoalCard goal={goal} />
+                  <GoalCard goal={goal} onContributeClick={() => setContributionGoal(goal)} />
                    <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(goal)}>
                         <Pencil className="h-4 w-4" />
@@ -119,6 +146,7 @@ export default function GoalsPage() {
         </Card>
       </main>
 
+      {/* Dialog for Edit/Create Goal */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -167,6 +195,32 @@ export default function GoalsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+        {/* Dialog for Add Contribution */}
+        <Dialog open={!!contributionGoal} onOpenChange={() => setContributionGoal(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Adicionar Contribuição</DialogTitle>
+                    <DialogDescription>
+                        Quanto você gostaria de adicionar à sua meta "{contributionGoal?.title}"?
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <Label htmlFor="contribution" className="text-left">Valor da Contribuição (R$)</Label>
+                    <Input 
+                        id="contribution" 
+                        type="number" 
+                        value={contributionAmount}
+                        onChange={(e) => setContributionAmount(e.target.value)}
+                        placeholder="Ex: 100.00"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setContributionGoal(null)}>Cancelar</Button>
+                    <Button onClick={handleAddContribution}>Salvar Contribuição</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

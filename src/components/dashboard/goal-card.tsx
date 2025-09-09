@@ -4,17 +4,19 @@ import type { Goal } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { differenceInDays, differenceInMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Target, AlertCircle, PartyPopper, Frown, Info } from 'lucide-react';
+import { Target, AlertCircle, PartyPopper, Frown, Info, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GoalCardProps {
   goal: Goal;
+  onContributeClick?: (goal: Goal) => void;
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
+export function GoalCard({ goal, onContributeClick }: GoalCardProps) {
   const { title, targetAmount, savedAmount, deadline, status, createdAt } = goal;
 
   const percentage = targetAmount > 0 ? (savedAmount / targetAmount) * 100 : 0;
@@ -86,7 +88,7 @@ export function GoalCard({ goal }: GoalCardProps) {
       <CardContent className="flex-grow space-y-4">
         <div className="space-y-2">
            <div className="flex justify-between text-sm font-medium">
-                <span>{formatCurrency(savedAmount)}</span>
+                <span className="font-bold text-lg">{formatCurrency(savedAmount)}</span>
                 <span className="text-muted-foreground">{formatCurrency(targetAmount)}</span>
            </div>
           <Progress value={displayPercentage} indicatorClassName={getProgressColor()} />
@@ -94,6 +96,13 @@ export function GoalCard({ goal }: GoalCardProps) {
         </div>
         
         {getSuggestion()}
+
+        {onContributeClick && status === 'in-progress' && (
+          <Button onClick={() => onContributeClick(goal)} size="sm" className="w-full mt-4">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Adicionar Contribuição
+          </Button>
+        )}
 
       </CardContent>
       <CardFooter>
