@@ -97,19 +97,13 @@ export default function DashboardPage() {
   const [contributionAmount, setContributionAmount] = useState('');
   const { toast } = useToast();
 
-
-  useEffect(() => {
-    const checkAchievementsOnMount = () => {
-        useCheckAchievements(
-            transactions,
-            unlockedAchievements,
-            setUnlockedAchievements,
-            toast
-        );
-    };
-    
-    checkAchievementsOnMount();
-  }, [])
+  // Call the hook at the top level of the component
+  useCheckAchievements(
+      transactions,
+      unlockedAchievements,
+      setUnlockedAchievements,
+      toast
+  );
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
@@ -236,7 +230,7 @@ export default function DashboardPage() {
                             align: "start",
                             loop: activeGoals.length > 3,
                         }}
-                        className="w-full"
+                        className="w-full px-12"
                         >
                         <CarouselContent className="-ml-1">
                             {activeGoals.map(goal => (
@@ -251,8 +245,8 @@ export default function DashboardPage() {
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
-                        <CarouselPrevious className="hidden sm:flex" />
-                        <CarouselNext className="hidden sm:flex" />
+                        <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
+                        <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
                     </Carousel>
                  ) : (
                     <p className="text-center text-muted-foreground py-10">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>
