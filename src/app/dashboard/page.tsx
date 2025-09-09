@@ -13,13 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
-import { BudgetCard } from '@/components/dashboard/budget-card';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
 import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
 import { GoalCard } from '@/components/dashboard/goal-card';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -32,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SmartQuery } from '@/components/dashboard/smart-query';
+import Link from 'next/link';
 
 // Custom hook to check for achievements
 const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
@@ -203,11 +203,18 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle>Suas Conquistas</CardTitle>
-                <CardDescription>
-                    {unlockedAchievements.length}/{ALL_ACHIEVEMENTS.length} conquistas desbloqueadas
-                </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Suas Conquistas</CardTitle>
+                    <CardDescription>
+                        {unlockedAchievements.length}/{ALL_ACHIEVEMENTS.length} conquistas desbloqueadas
+                    </CardDescription>
+                </div>
+                <Button asChild variant="outline">
+                    <Link href="/achievements">
+                        Ver Todas <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                 <AchievementsDisplay

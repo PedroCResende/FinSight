@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, PiggyBank, Settings, Target, Goal } from "lucide-react"
+import { LogOut, PiggyBank, Settings, Target, Goal, Award } from "lucide-react"
 
 export function Header() {
   return (
@@ -36,6 +36,9 @@ export function Header() {
                 </Button>
                 <Button variant="link" asChild>
                     <Link href="/goals">Metas</Link>
+                </Button>
+                 <Button variant="link" asChild>
+                    <Link href="/achievements">Conquistas</Link>
                 </Button>
             </div>
         </div>
