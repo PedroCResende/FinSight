@@ -49,7 +49,25 @@ export const MOCK_GOALS: Goal[] = [
     status: 'in-progress',
     createdAt: subDays(startOfDay(today), 120),
   },
-    {
+  {
+    id: 'goal_5',
+    title: 'Reforma da Casa',
+    targetAmount: 15000,
+    savedAmount: 3000,
+    deadline: addMonths(startOfDay(today), 10),
+    status: 'in-progress',
+    createdAt: subDays(startOfDay(today), 30),
+  },
+  {
+    id: 'goal_6',
+    title: 'Curso de Inglês',
+    targetAmount: 2500,
+    savedAmount: 500,
+    deadline: addMonths(startOfDay(today), 4),
+    status: 'in-progress',
+    createdAt: subDays(startOfDay(today), 15),
+  },
+  {
     id: 'goal_3',
     title: 'Fundo de Emergência',
     targetAmount: 10000,
