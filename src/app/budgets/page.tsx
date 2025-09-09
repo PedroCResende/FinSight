@@ -23,11 +23,11 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import type { Budget, Category, Transaction, UserAchievement } from '@/lib/types';
-import { MOCK_BUDGETS, MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_USER_ACHIEVEMENTS } from '@/lib/mock-data';
+import { MOCK_BUDGETS, MOCK_CATEGORIES, MOCK_TRANSACTIONS } from '@/lib/mock-data';
+import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
 import { useToast } from '@/hooks/use-toast';
-import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 
 
 export default function BudgetsPage() {

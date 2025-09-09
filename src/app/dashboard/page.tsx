@@ -10,11 +10,11 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_BUDGETS, MOCK_GOALS, MOCK_USER_ACHIEVEMENTS } from '@/lib/mock-data';
+import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_GOALS } from '@/lib/mock-data';
+import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
-import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
 import { GoalCard } from '@/components/dashboard/goal-card';
@@ -322,3 +322,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

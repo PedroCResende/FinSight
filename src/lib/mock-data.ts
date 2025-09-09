@@ -1,4 +1,4 @@
-import type { Category, Transaction, Budget, Goal } from './types';
+import type { Category, Transaction, Budget, Goal, UserAchievement } from './types';
 import { Home, UtensilsCrossed, ShoppingBag, Car, Film } from 'lucide-react';
 import { format, subDays, addMonths, startOfDay } from 'date-fns';
 
