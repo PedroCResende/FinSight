@@ -17,6 +17,7 @@ import {
   Gift,
   LucideIcon,
   Smile,
+  TrendingDown,
 } from 'lucide-react';
 
 export const ICON_LIST = [
@@ -29,6 +30,7 @@ export const ICON_LIST = [
   { name: 'Education', icon: BookOpen },
   { name: 'Travel', icon: Plane },
   { name: 'Gift', icon: Gift },
+  { name: 'Spending', icon: TrendingDown },
   { name: 'Other', icon: Smile },
 ];
 

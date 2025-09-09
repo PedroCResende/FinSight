@@ -16,6 +16,9 @@ import { subDays, format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
 import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { TimelineView } from '@/components/dashboard/timeline-view';
+import { HeatmapView } from '@/components/dashboard/heatmap-view';
+import { LayoutGrid, List } from 'lucide-react';
 
 // Custom hook to check for achievements
 const useCheckAchievements = (transactions: Transaction[], setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>) => {
@@ -42,6 +45,7 @@ export default function DashboardPage() {
   const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('standard');
    const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
@@ -100,44 +104,70 @@ export default function DashboardPage() {
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-           <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Visão Geral de Saídas</CardTitle>
-              <CardDescription>Sua distribuição de gastos por categoria.</CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-               <SpendingChart transactions={filteredTransactions} categories={categories} />
-            </CardContent>
-          </Card>
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Visão Geral de Entradas</CardTitle>
-              <CardDescription>Suas fontes de receita.</CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-               <IncomeChart transactions={filteredTransactions} />
-            </CardContent>
-          </Card>
+
+        <div className="flex justify-end">
+            <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
+                <TabsList>
+                    <TabsTrigger value="standard"><LayoutGrid className="mr-2 h-4 w-4" /> Visão Padrão</TabsTrigger>
+                    <TabsTrigger value="alternative"><List className="mr-2 h-4 w-4" /> Visão Alternativa</TabsTrigger>
+                </TabsList>
+            </Tabs>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Orçamentos do Mês</CardTitle>
-            <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activeBudgets.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {activeBudgets.map(budget => (
-                  <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Vá para a página de orçamentos para criar um.</p>
-            )}
-          </CardContent>
-        </Card>
+
+       {viewMode === 'standard' && (
+        <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                <Card className="col-span-1">
+                    <CardHeader>
+                    <CardTitle>Visão Geral de Saídas</CardTitle>
+                    <CardDescription>Sua distribuição de gastos por categoria.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                    <SpendingChart transactions={filteredTransactions} categories={categories} />
+                    </CardContent>
+                </Card>
+                <Card className="col-span-1">
+                    <CardHeader>
+                    <CardTitle>Visão Geral de Entradas</CardTitle>
+                    <CardDescription>Suas fontes de receita.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                    <IncomeChart transactions={filteredTransactions} />
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Orçamentos do Mês</CardTitle>
+                    <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {activeBudgets.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {activeBudgets.map(budget => (
+                        <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
+                        ))}
+                    </div>
+                    ) : (
+                    <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Vá para a página de orçamentos para criar um.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </>
+       )}
+
+       {viewMode === 'alternative' && (
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+                 <TimelineView transactions={filteredTransactions} categories={categories} />
+            </div>
+            <div className="lg:col-span-2">
+                <HeatmapView transactions={filteredTransactions} />
+            </div>
+        </div>
+       )}
 
         <Card>
             <CardHeader>
