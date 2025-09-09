@@ -56,8 +56,8 @@ export function HeatmapView({ transactions }: HeatmapViewProps) {
       <CardContent>
         <TooltipProvider>
             <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(day => (
-                    <div key={day} className="font-semibold text-muted-foreground">{day}</div>
+                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
+                    <div key={`${day}-${index}`} className="font-semibold text-muted-foreground">{day}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7 gap-1 mt-2">
