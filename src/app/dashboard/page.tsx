@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { Transaction, Category, Budget, UserAchievement, Goal } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
@@ -11,9 +11,10 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { MOCK_TRANSACTIONS, MOCK_CATEGORIES, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
+import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
-import { subDays, format } from 'date-fns';
+import { subDays } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
@@ -32,7 +33,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { SmartQuery } from '@/components/dashboard/smart-query';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
 import {
   Carousel,
   CarouselContent,
@@ -40,22 +40,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { useAuth } from '@/contexts/auth-context';
-import * as firestoreService from '@/services/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ICON_LIST } from '@/components/dashboard/icon-picker';
-import { LucideIcon } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>([]);
-  
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState('standard');
@@ -66,97 +56,45 @@ export default function DashboardPage() {
 
   const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
-  const { toast } = useToast();
-  
-  const findIconComponent = (iconName: string | LucideIcon): LucideIcon => {
-    if (typeof iconName !== 'string') {
-      return iconName; // It's already the component
-    }
-    return ICON_LIST.find(item => item.name === iconName)?.icon || ICON_LIST[0].icon;
-  }
-
-  useEffect(() => {
-    if (user) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const [transactionsData, categoriesData, goalsData] = await Promise.all([
-            firestoreService.getTransactions(user.uid),
-            firestoreService.getCategories(user.uid),
-            firestoreService.getGoals(user.uid)
-          ]);
-
-           const categoriesWithIcons = categoriesData.map(cat => ({
-            ...cat,
-            icon: findIconComponent(cat.icon as string),
-          }));
-
-          setTransactions(transactionsData);
-          setCategories(categoriesWithIcons as Category[]);
-          setGoals(goalsData);
-          setError(null);
-        } catch (e) {
-          console.error("Failed to fetch data:", e);
-          setError("Falha ao carregar os dados. Por favor, tente novamente mais tarde.");
-          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar seus dados.' });
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
-    }
-  }, [user, toast]);
-
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
-    if (!user) return;
+    // Basic ID generation for mock data
     const newTxsWithIds = newTransactions.map((tx, index) => ({
       ...tx,
       id: `tx_${Date.now()}_${index}`,
     }));
-    // Here you would call the firestore service to add transactions
     setTransactions((prev) => [...prev, ...newTxsWithIds]);
   };
 
   const updateTransactionCategory = (transactionId: string, categoryId: string) => {
-    if (!user) return;
-    firestoreService.updateTransaction(user.uid, transactionId, { category: categoryId })
-      .then(() => {
-        setTransactions(
-          transactions.map((t) =>
-            t.id === transactionId ? { ...t, category: categoryId } : t
-          )
-        );
-        toast({ title: 'Sucesso', description: 'Transação atualizada!' });
-      })
-      .catch(e => {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar a transação.' });
-      })
+    setTransactions(
+      transactions.map((t) =>
+        t.id === transactionId ? { ...t, category: categoryId } : t
+      )
+    );
   };
   
     const handleAddContribution = () => {
-    if (!contributionGoal || !contributionAmount || !user) return;
+    if (!contributionGoal || !contributionAmount) return;
 
     const amount = parseFloat(contributionAmount);
     if (isNaN(amount) || amount <= 0) return;
 
-    const newSavedAmount = contributionGoal.savedAmount + amount;
-    const updatedGoal = {
-        ...contributionGoal,
-        savedAmount: newSavedAmount,
-        status: newSavedAmount >= contributionGoal.targetAmount ? 'completed' : contributionGoal.status,
-    };
-    
-    firestoreService.updateGoal(user.uid, contributionGoal.id, { savedAmount: newSavedAmount, status: updatedGoal.status })
-        .then(() => {
-            setGoals(goals.map(g => g.id === contributionGoal.id ? updatedGoal : g));
-            setContributionGoal(null);
-            setContributionAmount('');
-            toast({ title: 'Sucesso!', description: 'Contribuição adicionada à sua meta.' });
-        })
-        .catch(e => {
-            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível adicionar a contribuição.' });
-        })
+    setGoals(
+      goals.map(g => {
+        if (g.id === contributionGoal.id) {
+          const newSavedAmount = g.savedAmount + amount;
+          return {
+            ...g,
+            savedAmount: newSavedAmount,
+            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
+          };
+        }
+        return g;
+      })
+    );
+    setContributionGoal(null);
+    setContributionAmount('');
   };
 
 
@@ -177,22 +115,6 @@ export default function DashboardPage() {
   const activeGoals = useMemo(() => {
       return goals.filter(goal => goal.status === 'in-progress');
   }, [goals]);
-
-  if (loading) {
-      return (
-          <div className="flex min-h-screen w-full flex-col bg-background">
-              <Header />
-              <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                  <Skeleton className="h-32 w-full" />
-                  <div className="grid gap-4 md:grid-cols-2">
-                      <Skeleton className="h-64 w-full" />
-                      <Skeleton className="h-64 w-full" />
-                  </div>
-                   <Skeleton className="h-48 w-full" />
-              </main>
-          </div>
-      )
-  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -360,5 +282,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

@@ -16,9 +16,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PlusCircle, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import type { Category } from '@/lib/types';
 import { IconPicker, ICON_LIST } from './icon-picker';
-import * as firestoreService from '@/services/firestore';
-import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/hooks/use-toast';
 
 interface CategoryManagerProps {
   categories: Category[];
@@ -26,8 +23,6 @@ interface CategoryManagerProps {
 }
 
 export function CategoryManager({ categories, setCategories }: CategoryManagerProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Partial<Category> | null>(null);
   const [categoryName, setCategoryName] = useState('');
@@ -48,52 +43,33 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (categoryId: string) => {
-    if (!user) return;
-    try {
-      await firestoreService.deleteCategory(user.uid, categoryId);
-      setCategories(categories.filter((c) => c.id !== categoryId));
-      toast({ title: 'Sucesso', description: 'Categoria excluída.' });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a categoria.' });
-    }
+  const handleDelete = (categoryId: string) => {
+    setCategories(categories.filter((c) => c.id !== categoryId));
   };
 
-  const handleSave = async () => {
-    if (!categoryName || !user) return;
+  const handleSave = () => {
+    if (!categoryName) return;
 
-    const categoryData = {
-      name: categoryName,
-      icon: selectedIcon.name, // Always save the icon name as a string
-      color: currentCategory?.color || `hsl(${Math.random() * 360}, 70%, 50%)`,
-    };
-
-    try {
-      if (currentCategory?.id) {
-        // Edit existing
-        await firestoreService.updateCategory(user.uid, currentCategory.id, categoryData);
-        setCategories(
-          categories.map((c) =>
-            c.id === currentCategory!.id ? { ...c, ...categoryData, icon: selectedIcon.icon } : c
-          )
-        );
-        toast({ title: 'Sucesso', description: 'Categoria atualizada.' });
-      } else {
-        // Add new
-        const newCategoryId = await firestoreService.addCategory(user.uid, categoryData);
-        const newCategory: Category = {
-          id: newCategoryId,
-          ...categoryData,
-          icon: selectedIcon.icon, // convert name to component for local state
-        };
-        setCategories([...categories, newCategory]);
-        toast({ title: 'Sucesso', description: 'Categoria criada.' });
-      }
-      setIsDialogOpen(false);
-    } catch (e) {
-       console.error("Failed to save category:", e);
-       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível salvar a categoria.' });
+    if (currentCategory?.id) {
+      // Edit existing
+      setCategories(
+        categories.map((c) =>
+          c.id === currentCategory.id
+            ? { ...c, name: categoryName, icon: selectedIcon.icon }
+            : c
+        )
+      );
+    } else {
+      // Add new
+      const newCategory: Category = {
+        id: `cat_${Date.now()}`,
+        name: categoryName,
+        icon: selectedIcon.icon,
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+      };
+      setCategories([...categories, newCategory]);
     }
+    setIsDialogOpen(false);
   };
 
   return (
@@ -110,7 +86,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
           <div className="rounded-md border">
             <div className="divide-y divide-border">
               {categories.map((category) => {
-                const IconComponent = category.icon as LucideIcon;
+                 const IconComponent = category.icon as LucideIcon;
                 return (
                   <div key={category.id} className="flex items-center p-4">
                     <IconComponent className="h-5 w-5 mr-4" style={{ color: category.color }} />
@@ -166,5 +142,3 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     </Card>
   );
 }
-
-    
