@@ -89,7 +89,7 @@ export default function DashboardPage() {
           }));
 
           setTransactions(transactionsData);
-          setCategories(categoriesWithIcons);
+          setCategories(categoriesWithIcons as Category[]);
           setGoals(goalsData);
           setError(null);
         } catch (e) {

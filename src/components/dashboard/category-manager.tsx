@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,6 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   const [categoryName, setCategoryName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<{ name: string, icon: LucideIcon }>(ICON_LIST[0]);
 
-  const findIconComponent = (iconNameOrComponent?: string | LucideIcon): LucideIcon => {
-    if (!iconNameOrComponent) return ICON_LIST[0].icon;
-    if (typeof iconNameOrComponent !== 'string') return iconNameOrComponent;
-    return ICON_LIST.find(item => item.name === iconNameOrComponent)?.icon || ICON_LIST[0].icon;
-  }
-
   const openDialogForNew = () => {
     setCurrentCategory({});
     setCategoryName('');
@@ -48,9 +43,8 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   const openDialogForEdit = (category: Category) => {
     setCurrentCategory(category);
     setCategoryName(category.name);
-    const iconObject = ICON_LIST.find(item => 
-        item.name === category.icon || item.icon === category.icon
-    ) || ICON_LIST[0];
+    // The icon coming from props is already a component, find the corresponding object in ICON_LIST
+    const iconObject = ICON_LIST.find(item => item.icon === category.icon) || ICON_LIST[0];
     setSelectedIcon(iconObject);
     setIsDialogOpen(true);
   };
@@ -71,7 +65,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
 
     const categoryData = {
       name: categoryName,
-      icon: selectedIcon.name, // Save the icon name as a string
+      icon: selectedIcon.name, // Always save the icon name as a string
       color: currentCategory?.color || `hsl(${Math.random() * 360}, 70%, 50%)`,
     };
 
@@ -81,7 +75,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
         await firestoreService.updateCategory(user.uid, currentCategory.id, categoryData);
         setCategories(
           categories.map((c) =>
-            c.id === currentCategory!.id ? { ...c, ...categoryData, icon: findIconComponent(categoryData.icon) } : c
+            c.id === currentCategory!.id ? { ...c, ...categoryData, icon: selectedIcon.icon } : c
           )
         );
         toast({ title: 'Sucesso', description: 'Categoria atualizada.' });
@@ -91,7 +85,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
         const newCategory: Category = {
           id: newCategoryId,
           ...categoryData,
-          icon: findIconComponent(categoryData.icon), // convert name to component for local state
+          icon: selectedIcon.icon, // convert name to component for local state
         };
         setCategories([...categories, newCategory]);
         toast({ title: 'Sucesso', description: 'Categoria criada.' });
@@ -117,7 +111,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
           <div className="rounded-md border">
             <div className="divide-y divide-border">
               {categories.map((category) => {
-                const IconComponent = findIconComponent(category.icon);
+                const IconComponent = category.icon as LucideIcon;
                 return (
                   <div key={category.id} className="flex items-center p-4">
                     <IconComponent className="h-5 w-5 mr-4" style={{ color: category.color }} />
