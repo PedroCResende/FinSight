@@ -40,7 +40,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
-import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange } from '@/services/firestore';
+import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransaction } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
 
@@ -85,13 +85,23 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const handleSetTransactions = (newTransactions: Transaction[]) => {
-    // Basic ID generation for mock data
-    const newTxsWithIds = newTransactions.map((tx, index) => ({
-      ...tx,
-      id: `tx_${Date.now()}_${index}`,
-    }));
-    setTransactions((prev) => [...prev, ...newTxsWithIds]);
+  const handleSetTransactions = async (newTransactions: Omit<Transaction, 'id'>[]) => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para adicionar transações.' });
+        return;
+    }
+    try {
+        const addedTransactions: Transaction[] = [];
+        for (const txData of newTransactions) {
+            const newId = await addTransaction(user.uid, txData);
+            addedTransactions.push({ id: newId, ...txData });
+        }
+        setTransactions((prev) => [...prev, ...addedTransactions]);
+        toast({ title: 'Sucesso', description: `${addedTransactions.length} transações importadas.` });
+    } catch (error) {
+        console.error("Error adding transactions:", error);
+        toast({ variant: 'destructive', title: 'Erro ao importar', description: 'Não foi possível salvar as transações.' });
+    }
   };
 
   const updateTransactionCategory = async (transactionId: string, categoryId: string) => {
@@ -332,5 +342,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

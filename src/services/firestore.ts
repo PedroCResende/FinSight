@@ -161,5 +161,3 @@ export async function updateBudgetOnTransactionChange(userId: string, categoryId
 
 
 // Implement other service functions for Achievements etc. following the same pattern.
-
-    

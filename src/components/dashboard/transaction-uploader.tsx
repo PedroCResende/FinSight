@@ -9,7 +9,7 @@ import type { Transaction } from '@/lib/types';
 import { Upload } from 'lucide-react';
 
 interface TransactionUploaderProps {
-  onUpload: (transactions: Transaction[]) => void;
+  onUpload: (transactions: Omit<Transaction, 'id' | 'category'>[]) => void;
 }
 
 export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
@@ -61,11 +61,8 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             };
           });
         
-        onUpload(transactions as Transaction[]);
-        toast({
-          title: 'Upload bem-sucedido',
-          description: `${transactions.length} transações foram importadas.`,
-        });
+        onUpload(transactions);
+        
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -75,6 +72,9 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
       } finally {
         setIsParsing(false);
         setFile(null);
+        // Reset file input
+        const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
+        if(fileInput) fileInput.value = '';
       }
     };
     reader.readAsText(file);
