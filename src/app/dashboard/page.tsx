@@ -40,16 +40,17 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
-import { getCategories, getTransactions, getGoals } from '@/services/firestore';
+import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
-import { MOCK_TRANSACTIONS, MOCK_CATEGORIES, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const { toast } = useToast();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -93,12 +94,32 @@ export default function DashboardPage() {
     setTransactions((prev) => [...prev, ...newTxsWithIds]);
   };
 
-  const updateTransactionCategory = (transactionId: string, categoryId: string) => {
-    setTransactions(
-      transactions.map((t) =>
-        t.id === transactionId ? { ...t, category: categoryId } : t
-      )
-    );
+  const updateTransactionCategory = async (transactionId: string, categoryId: string) => {
+     if (!user) return;
+     try {
+        const transactionToUpdate = transactions.find(t => t.id === transactionId);
+        if (!transactionToUpdate) return;
+        
+        await updateTransaction(user.uid, transactionId, { category: categoryId });
+
+        setTransactions(
+            transactions.map((t) =>
+                t.id === transactionId ? { ...t, category: categoryId } : t
+            )
+        );
+
+        // Update the budget after successfully updating the transaction
+        await updateBudgetOnTransactionChange(user.uid, categoryId, transactionToUpdate.date);
+        
+        // Also update budget for the old category if it existed
+        if (transactionToUpdate.category) {
+            await updateBudgetOnTransactionChange(user.uid, transactionToUpdate.category, transactionToUpdate.date);
+        }
+
+        toast({ title: 'Sucesso', description: 'Transação categorizada.' });
+     } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível categorizar a transação.' });
+     }
   };
   
     const handleAddContribution = () => {

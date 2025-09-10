@@ -14,6 +14,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import type { Category, Transaction, Budget, Goal, UserAchievement } from '@/lib/types';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 
 // Helper to convert Firestore Timestamps
@@ -121,6 +122,38 @@ export async function updateBudget(userId: string, budgetId: string, budgetData:
 export async function deleteBudget(userId: string, budgetId: string): Promise<void> {
     const budgetDoc = doc(db, `users/${userId}/budgets`, budgetId);
     await deleteDoc(budgetDoc);
+}
+
+export async function updateBudgetOnTransactionChange(userId: string, categoryId: string, transactionDate: string) {
+    const month = format(new Date(transactionDate.replace(/-/g, '/')), 'yyyy-MM');
+    const budgetsRef = collection(db, `users/${userId}/budgets`);
+    const budgetQuery = query(budgetsRef, where('categoryId', '==', categoryId), where('month', '==', month));
+    const budgetSnapshot = await getDocs(budgetQuery);
+
+    if (budgetSnapshot.empty) {
+        // No budget for this category and month, so nothing to update.
+        return;
+    }
+
+    const budgetDoc = budgetSnapshot.docs[0];
+
+    // Recalculate the total spent for this category in the given month
+    const transactionsRef = collection(db, `users/${userId}/transactions`);
+    const monthStartDate = startOfMonth(new Date(transactionDate.replace(/-/g, '/')));
+    const monthEndDate = endOfMonth(new Date(transactionDate.replace(/-/g, '/')));
+    
+    const transactionsQuery = query(
+        transactionsRef,
+        where('category', '==', categoryId),
+        where('date', '>=', format(monthStartDate, 'yyyy-MM-dd')),
+        where('date', '<=', format(monthEndDate, 'yyyy-MM-dd')),
+        where('amount', '<', 0)
+    );
+
+    const transactionsSnapshot = await getDocs(transactionsQuery);
+    const totalSpent = transactionsSnapshot.docs.reduce((acc, doc) => acc + Math.abs(doc.data().amount), 0);
+    
+    await updateDoc(budgetDoc.ref, { current: totalSpent });
 }
 
 
