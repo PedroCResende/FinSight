@@ -125,7 +125,10 @@ export async function deleteBudget(userId: string, budgetId: string): Promise<vo
 }
 
 export async function updateBudgetOnTransactionChange(userId: string, categoryId: string, transactionDate: string) {
-    const month = format(new Date(transactionDate.replace(/-/g, '/')), 'yyyy-MM');
+    // Dates in Firestore are strings, so we parse them. Adjust for timezone issues.
+    const safeDate = new Date(transactionDate.replace(/-/g, '/'));
+    const month = format(safeDate, 'yyyy-MM');
+
     const budgetsRef = collection(db, `users/${userId}/budgets`);
     const budgetQuery = query(budgetsRef, where('categoryId', '==', categoryId), where('month', '==', month));
     const budgetSnapshot = await getDocs(budgetQuery);
@@ -139,14 +142,14 @@ export async function updateBudgetOnTransactionChange(userId: string, categoryId
 
     // Recalculate the total spent for this category in the given month
     const transactionsRef = collection(db, `users/${userId}/transactions`);
-    const monthStartDate = startOfMonth(new Date(transactionDate.replace(/-/g, '/')));
-    const monthEndDate = endOfMonth(new Date(transactionDate.replace(/-/g, '/')));
+    const monthStartDate = format(startOfMonth(safeDate), 'yyyy-MM-dd');
+    const monthEndDate = format(endOfMonth(safeDate), 'yyyy-MM-dd');
     
     const transactionsQuery = query(
         transactionsRef,
         where('category', '==', categoryId),
-        where('date', '>=', format(monthStartDate, 'yyyy-MM-dd')),
-        where('date', '<=', format(monthEndDate, 'yyyy-MM-dd')),
+        where('date', '>=', monthStartDate),
+        where('date', '<=', monthEndDate),
         where('amount', '<', 0)
     );
 
@@ -158,3 +161,5 @@ export async function updateBudgetOnTransactionChange(userId: string, categoryId
 
 
 // Implement other service functions for Achievements etc. following the same pattern.
+
+    

@@ -102,13 +102,14 @@ export default function DashboardPage() {
         
         await updateTransaction(user.uid, transactionId, { category: categoryId });
 
+        // Optimistically update local state
         setTransactions(
             transactions.map((t) =>
                 t.id === transactionId ? { ...t, category: categoryId } : t
             )
         );
 
-        // Update the budget after successfully updating the transaction
+        // Update the budget for the new category after successfully updating the transaction
         await updateBudgetOnTransactionChange(user.uid, categoryId, transactionToUpdate.date);
         
         // Also update budget for the old category if it existed
@@ -118,6 +119,7 @@ export default function DashboardPage() {
 
         toast({ title: 'Sucesso', description: 'Transação categorizada.' });
      } catch (error) {
+        console.error("Error updating transaction category:", error);
         toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível categorizar a transação.' });
      }
   };
@@ -149,9 +151,9 @@ export default function DashboardPage() {
   const filteredTransactions = useMemo(() => {
      return transactions.filter(transaction => {
       const searchTermMatch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const categoryMatch = categoryFilter === 'all' || transaction.category === categoryFilter;
+      const categoryMatch = categoryFilter === 'all' || transaction.category === categoryFilter || (categoryFilter === 'uncategorized' && !transaction.category);
       
-      const transactionDate = new Date(transaction.date);
+      const transactionDate = new Date(transaction.date.replace(/-/g, '/'));
       const dateMatch = dateRange?.from && dateRange?.to
         ? transactionDate >= dateRange.from && transactionDate <= dateRange.to
         : true;
