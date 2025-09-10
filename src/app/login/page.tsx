@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -71,6 +72,8 @@ export default function LoginPage() {
     }
   };
 
+  const isSignupFormComplete = signupName.trim() !== '' && signupEmail.trim() !== '' && signupPassword.trim() !== '';
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
@@ -132,7 +135,12 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full" variant="secondary" onClick={handleSignup} disabled={loading}>
+                <Button 
+                    className="w-full" 
+                    variant={isSignupFormComplete ? 'default' : 'secondary'}
+                    onClick={handleSignup} 
+                    disabled={loading || !isSignupFormComplete}
+                >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Criar Conta
                 </Button>
