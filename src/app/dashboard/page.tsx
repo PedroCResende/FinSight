@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Transaction, Category, Budget, UserAchievement, Goal } from '@/lib/types';
 import { Header } from '@/components/dashboard/header';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
@@ -11,7 +11,6 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_TRANSACTIONS, MOCK_CATEGORIES, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
 import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays } from 'date-fns';
@@ -40,8 +39,14 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { useAuth } from '@/contexts/auth-context';
+import { getCategories, getTransactions, getGoals } from '@/services/firestore';
+import { findIconComponent } from '@/components/dashboard/icon-picker';
+import { MOCK_TRANSACTIONS, MOCK_CATEGORIES, MOCK_BUDGETS, MOCK_GOALS } from '@/lib/mock-data';
+
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
@@ -56,6 +61,28 @@ export default function DashboardPage() {
 
   const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      const fetchData = async () => {
+        const [firestoreCategories, firestoreTransactions, firestoreGoals] = await Promise.all([
+          getCategories(user.uid),
+          getTransactions(user.uid),
+          getGoals(user.uid),
+        ]);
+
+        const categoriesWithIcons = firestoreCategories.map(c => ({
+          ...c,
+          icon: findIconComponent(c.icon as string)!,
+        }));
+        setCategories(categoriesWithIcons);
+        setTransactions(firestoreTransactions);
+        setGoals(firestoreGoals);
+      };
+
+      fetchData();
+    }
+  }, [user]);
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
     // Basic ID generation for mock data
@@ -282,3 +309,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

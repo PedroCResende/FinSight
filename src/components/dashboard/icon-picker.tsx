@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Popover,
@@ -34,6 +35,18 @@ export const ICON_LIST: { name: string; icon: LucideIcon }[] = [
   { name: 'Other', icon: Smile },
 ];
 
+export function findIconComponent(name: string): LucideIcon | undefined {
+    return ICON_LIST.find(item => item.name === name)?.icon;
+}
+
+export function findIconInfo(icon: LucideIcon | string): { name: string, icon: LucideIcon } | undefined {
+    if (typeof icon === 'string') {
+        return ICON_LIST.find(item => item.name === icon);
+    }
+    return ICON_LIST.find(item => item.icon === icon);
+}
+
+
 interface IconPickerProps {
   selectedIcon: LucideIcon;
   setSelectedIcon: (icon: LucideIcon) => void;
@@ -66,3 +79,5 @@ export function IconPicker({ selectedIcon: SelectedIcon, setSelectedIcon }: Icon
     </Popover>
   );
 }
+
+    
