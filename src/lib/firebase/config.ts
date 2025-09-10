@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyATjUtFWIOprS9ntjc9RGAsoCjdf5409U8",
   authDomain: "finsight-lxxmb.firebaseapp.com",
   projectId: "finsight-lxxmb",
-  storageBucket: "finsight-lxxmb.appspot.com",
+  storageBucket: "finsight-lxxmb.firebasestorage.app",
   messagingSenderId: "686617891887",
   appId: "1:686617891887:web:881751cbebeb78e950a2da"
 };
