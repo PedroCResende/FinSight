@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,14 +17,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2, CalendarIcon } from 'lucide-react';
 import type { Goal } from '@/lib/types';
-import { MOCK_GOALS } from '@/lib/mock-data';
 import { format, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { GoalCard } from '@/components/dashboard/goal-card';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getGoals, addGoal, updateGoal, deleteGoal } from '@/services/firestore';
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentGoal, setCurrentGoal] = useState<Partial<Goal> | null>(null);
   const [title, setTitle] = useState('');
@@ -34,6 +38,16 @@ export default function GoalsPage() {
   // State for contribution dialog
   const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      const fetchGoals = async () => {
+        const firestoreGoals = await getGoals(user.uid);
+        setGoals(firestoreGoals);
+      };
+      fetchGoals();
+    }
+  }, [user]);
 
   const openDialogForNew = () => {
     setCurrentGoal({});
@@ -47,64 +61,90 @@ export default function GoalsPage() {
     setCurrentGoal(goal);
     setTitle(goal.title);
     setTargetAmount(String(goal.targetAmount));
-    setDeadline(goal.deadline);
+    setDeadline(new Date(goal.deadline));
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (goalId: string) => {
-    setGoals(goals.filter(g => g.id !== goalId));
+  const handleDelete = async (goalId: string) => {
+    if (!user) return;
+    try {
+      await deleteGoal(user.uid, goalId);
+      setGoals(goals.filter(g => g.id !== goalId));
+      toast({ title: 'Sucesso', description: 'Meta deletada.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao deletar', description: 'Não foi possível deletar a meta.' });
+    }
   };
 
-  const handleSave = () => {
-    if (!title || !targetAmount || !deadline) return;
+  const handleSave = async () => {
+    if (!user || !title || !targetAmount || !deadline) {
+        toast({ variant: 'destructive', title: 'Campos Incompletos', description: 'Por favor, preencha todos os campos.' });
+        return;
+    }
 
     const numericAmount = parseFloat(targetAmount);
-    if (isNaN(numericAmount) || numericAmount <= 0) return;
-
-    if (currentGoal?.id) {
-      // Edit existing
-      setGoals(
-        goals.map(g =>
-          g.id === currentGoal.id ? { ...g, title, targetAmount: numericAmount, deadline } : g
-        )
-      );
-    } else {
-      // Add new
-      const newGoal: Goal = {
-        id: `goal_${Date.now()}`,
-        title,
-        targetAmount: numericAmount,
-        savedAmount: 0,
-        deadline,
-        status: 'in-progress',
-        createdAt: new Date(),
-      };
-      setGoals([...goals, newGoal]);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+        toast({ variant: 'destructive', title: 'Valor Inválido', description: 'Por favor, insira um valor alvo válido.' });
+        return;
     }
-    setIsDialogOpen(false);
+
+    try {
+      if (currentGoal?.id) {
+        // Edit existing
+        const updatedData = { title, targetAmount: numericAmount, deadline };
+        await updateGoal(user.uid, currentGoal.id, updatedData);
+        setGoals(
+          goals.map(g =>
+            g.id === currentGoal.id ? { ...g, ...updatedData } : g
+          )
+        );
+        toast({ title: 'Sucesso', description: 'Meta atualizada.' });
+      } else {
+        // Add new
+        const newGoalData: Omit<Goal, 'id' | 'createdAt'> = {
+          title,
+          targetAmount: numericAmount,
+          savedAmount: 0,
+          deadline,
+          status: 'in-progress',
+        };
+        const newId = await addGoal(user.uid, newGoalData);
+        // Optimistic update - for better UX, we can refetch or just add locally
+        const newGoal = { ...newGoalData, id: newId, createdAt: new Date() }; // Approximate createdAt
+        setGoals([...goals, newGoal]);
+        toast({ title: 'Sucesso', description: 'Meta criada.' });
+      }
+      setIsDialogOpen(false);
+    } catch(error) {
+       toast({ variant: 'destructive', title: 'Erro ao Salvar', description: 'Ocorreu um erro ao salvar a meta.' });
+    }
   };
 
-  const handleAddContribution = () => {
-    if (!contributionGoal || !contributionAmount) return;
+  const handleAddContribution = async () => {
+    if (!user || !contributionGoal || !contributionAmount) return;
 
     const amount = parseFloat(contributionAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (isNaN(amount) || amount <= 0) {
+        toast({ variant: 'destructive', title: 'Valor Inválido', description: 'Por favor, insira um valor de contribuição válido.' });
+        return;
+    }
 
-    setGoals(
-      goals.map(g => {
-        if (g.id === contributionGoal.id) {
-          const newSavedAmount = g.savedAmount + amount;
-          return {
-            ...g,
-            savedAmount: newSavedAmount,
-            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
-          };
-        }
-        return g;
-      })
-    );
-    setContributionGoal(null);
-    setContributionAmount('');
+    const newSavedAmount = contributionGoal.savedAmount + amount;
+    const newStatus = newSavedAmount >= contributionGoal.targetAmount ? 'completed' : contributionGoal.status;
+
+    try {
+        await updateGoal(user.uid, contributionGoal.id, { savedAmount: newSavedAmount, status: newStatus });
+        setGoals(
+          goals.map(g => 
+            g.id === contributionGoal.id ? { ...g, savedAmount: newSavedAmount, status: newStatus } : g
+          )
+        );
+        toast({ title: 'Sucesso', description: `Contribuição de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} adicionada!` });
+        setContributionGoal(null);
+        setContributionAmount('');
+    } catch(error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível adicionar a contribuição.' });
+    }
   };
 
   return (

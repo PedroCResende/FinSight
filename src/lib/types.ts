@@ -43,7 +43,7 @@ export interface Goal {
   savedAmount: number;
   deadline: Date;
   status: 'in-progress' | 'completed' | 'failed';
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 // Auth Types
