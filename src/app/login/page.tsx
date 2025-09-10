@@ -28,17 +28,35 @@ export default function LoginPage() {
   const [signupPassword, setSignupPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleAuthError = (error: any, action: 'login' | 'signup') => {
+    const title = action === 'login' ? 'Erro ao entrar' : 'Erro ao criar conta';
+    let description = 'Ocorreu um erro inesperado. Tente novamente.';
+
+    if (error.code === 'auth/configuration-not-found') {
+      description = 'O método de login por e-mail/senha não está ativado no Firebase. Por favor, ative-o no Console do Firebase em Authentication > Sign-in method.';
+    } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      description = 'E-mail ou senha inválidos.';
+    } else if (error.code === 'auth/email-already-in-use') {
+      description = 'Este e-mail já está em uso por outra conta.';
+    } else {
+        description = error.message;
+    }
+
+    toast({
+      variant: 'destructive',
+      title: title,
+      description: description,
+    });
+  };
+
   const handleLogin = async () => {
     setLoading(true);
     try {
       await login({ email: loginEmail, password: loginPassword });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao entrar',
-        description: error.message,
-      });
-      setLoading(false);
+      handleAuthError(error, 'login');
+    } finally {
+        setLoading(false);
     }
   };
   
@@ -47,12 +65,9 @@ export default function LoginPage() {
     try {
       await signup({ name: signupName, email: signupEmail, password: signupPassword });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao criar conta',
-        description: error.message,
-      });
-      setLoading(false);
+      handleAuthError(error, 'signup');
+    } finally {
+        setLoading(false);
     }
   };
 
