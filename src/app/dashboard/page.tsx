@@ -68,6 +68,10 @@ export default function DashboardPage() {
   const [contributionAmount, setContributionAmount] = useState('');
   const { toast } = useToast();
   
+  const findIconComponent = (iconName: string): LucideIcon => {
+    return ICON_LIST.find(item => item.name === iconName)?.icon || ICON_LIST[0].icon;
+  }
+
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
@@ -78,10 +82,11 @@ export default function DashboardPage() {
             firestoreService.getCategories(user.uid),
             firestoreService.getGoals(user.uid)
           ]);
+
            const categoriesWithIcons = categoriesData.map(cat => ({
             ...cat,
-            icon: ICON_LIST.find(i => i.name === cat.icon)?.icon || ICON_LIST[0].icon,
-          }))
+            icon: findIconComponent(cat.icon as string),
+          }));
 
           setTransactions(transactionsData);
           setCategories(categoriesWithIcons);
