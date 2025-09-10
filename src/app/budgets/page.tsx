@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
@@ -23,23 +24,51 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import type { Budget, Category, Transaction, UserAchievement } from '@/lib/types';
-import { MOCK_BUDGETS, MOCK_CATEGORIES, MOCK_TRANSACTIONS } from '@/lib/mock-data';
-import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import { format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
+import { getBudgets, addBudget, updateBudget, deleteBudget, getCategories, getTransactions } from '@/services/firestore';
+import { findIconComponent } from '@/components/dashboard/icon-picker';
+import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 
 
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
-  const [categories] = useState<Category[]>(MOCK_CATEGORIES);
-  const [transactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<Partial<Budget> | null>(null);
   const [limit, setLimit] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  
   const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
-  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (user) {
+      const fetchData = async () => {
+        const [firestoreBudgets, firestoreCategories, firestoreTransactions] = await Promise.all([
+            getBudgets(user.uid),
+            getCategories(user.uid),
+            getTransactions(user.uid)
+        ]);
+
+        const categoriesWithIcons = firestoreCategories.map(c => ({
+          ...c,
+          icon: findIconComponent(c.icon as string)!,
+        }));
+        setCategories(categoriesWithIcons);
+        setBudgets(firestoreBudgets);
+        setTransactions(firestoreTransactions);
+      };
+
+      fetchData();
+    }
+  }, [user]);
 
   const activeBudgets = useMemo(() => {
     const currentMonth = format(new Date(), 'yyyy-MM');
@@ -87,36 +116,54 @@ export default function BudgetsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (budgetId: string) => {
-    setBudgets(budgets.filter(b => b.id !== budgetId));
+  const handleDelete = async (budgetId: string) => {
+    if (!user) return;
+    try {
+        await deleteBudget(user.uid, budgetId);
+        setBudgets(budgets.filter(b => b.id !== budgetId));
+        toast({ title: 'Sucesso', description: 'Orçamento deletado.' });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro ao deletar', description: 'Não foi possível deletar o orçamento.' });
+    }
   };
 
-  const handleSave = () => {
-    if (!limit || !selectedCategoryId) return;
+  const handleSave = async () => {
+    if (!user || !limit || !selectedCategoryId) return;
 
     const numericLimit = parseFloat(limit);
-    if (isNaN(numericLimit) || numericLimit <= 0) return;
+    if (isNaN(numericLimit) || numericLimit <= 0) {
+        toast({ variant: 'destructive', title: 'Valor Inválido', description: 'Por favor, insira um limite válido.' });
+        return;
+    };
 
-    if (currentBudget?.id) {
-      // Edit existing
-      setBudgets(
-        budgets.map(b =>
-          b.id === currentBudget.id ? { ...b, categoryId: selectedCategoryId, limit: numericLimit } : b
-        )
-      );
-    } else {
-      // Add new
-      const newBudget: Budget = {
-        id: `bud_${Date.now()}`,
-        categoryId: selectedCategoryId,
-        limit: numericLimit,
-        current: 0,
-        month: format(new Date(), 'yyyy-MM'),
-      };
-      setBudgets([...budgets, newBudget]);
-      checkAchievement('ach_8'); // "Planejador" achievement
+    try {
+        if (currentBudget?.id) {
+          // Edit existing
+          const updatedData = { limit: numericLimit };
+          await updateBudget(user.uid, currentBudget.id, updatedData);
+          setBudgets(
+            budgets.map(b =>
+              b.id === currentBudget.id ? { ...b, ...updatedData } : b
+            )
+          );
+           toast({ title: 'Sucesso', description: 'Orçamento atualizado.' });
+        } else {
+          // Add new
+          const newBudgetData: Omit<Budget, 'id'> = {
+            categoryId: selectedCategoryId,
+            limit: numericLimit,
+            current: 0,
+            month: format(new Date(), 'yyyy-MM'),
+          };
+          const newId = await addBudget(user.uid, newBudgetData);
+          setBudgets([...budgets, { id: newId, ...newBudgetData }]);
+          checkAchievement('ach_8'); // "Planejador" achievement
+          toast({ title: 'Sucesso', description: 'Orçamento criado.' });
+        }
+        setIsDialogOpen(false);
+    } catch(error) {
+        toast({ variant: 'destructive', title: 'Erro ao Salvar', description: 'Ocorreu um erro ao salvar o orçamento.' });
     }
-    setIsDialogOpen(false);
   };
   
   const formatCurrency = (amount: number) => {

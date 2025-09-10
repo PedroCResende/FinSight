@@ -98,5 +98,29 @@ export async function deleteGoal(userId: string, goalId: string): Promise<void> 
     await deleteDoc(goalDoc);
 }
 
+// --- BUDGETS ---
+export async function getBudgets(userId: string): Promise<Budget[]> {
+    const budgetsRef = collection(db, `users/${userId}/budgets`);
+    const q = query(budgetsRef);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Budget));
+}
 
-// Implement other service functions for Budgets, Achievements etc. following the same pattern.
+export async function addBudget(userId: string, budgetData: Omit<Budget, 'id'>): Promise<string> {
+    const budgetsRef = collection(db, `users/${userId}/budgets`);
+    const docRef = await addDoc(budgetsRef, budgetData);
+    return docRef.id;
+}
+
+export async function updateBudget(userId: string, budgetId: string, budgetData: Partial<Budget>): Promise<void> {
+    const budgetDoc = doc(db, `users/${userId}/budgets`, budgetId);
+    await updateDoc(budgetDoc, budgetData);
+}
+
+export async function deleteBudget(userId: string, budgetId: string): Promise<void> {
+    const budgetDoc = doc(db, `users/${userId}/budgets`, budgetId);
+    await deleteDoc(budgetDoc);
+}
+
+
+// Implement other service functions for Achievements etc. following the same pattern.
