@@ -42,8 +42,9 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   const openDialogForEdit = (category: Category) => {
     setCurrentCategory(category);
     setCategoryName(category.name);
-    // Find the icon object from the list to set it properly
-    const iconObject = ICON_LIST.find(item => item.name === category.icon) || ICON_LIST[0];
+    const iconObject = ICON_LIST.find(item => 
+        typeof category.icon === 'string' ? item.name === category.icon : item.icon === category.icon
+    ) || ICON_LIST[0];
     setSelectedIcon(iconObject);
     setIsDialogOpen(true);
   };
@@ -76,7 +77,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
         await firestoreService.updateCategory(user.uid, currentCategory.id, categoryData);
         setCategories(
           categories.map((c) =>
-            c.id === currentCategory.id ? { ...c, ...categoryData, icon: selectedIcon.icon } : c
+            c.id === currentCategory.id ? { ...c, ...categoryData } : c
           )
         );
         toast({ title: 'Sucesso', description: 'Categoria atualizada.' });
@@ -86,7 +87,6 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
         const newCategory: Category = {
           id: newCategoryId,
           ...categoryData,
-          icon: selectedIcon.icon,
         };
         setCategories([...categories, newCategory]);
         toast({ title: 'Sucesso', description: 'Categoria criada.' });
@@ -97,9 +97,10 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     }
   };
 
-  const findIconComponent = (iconName?: string | LucideIcon): LucideIcon => {
-    if (typeof iconName !== 'string') return iconName || ICON_LIST[0].icon;
-    return ICON_LIST.find(item => item.name === iconName)?.icon || ICON_LIST[0].icon;
+  const findIconComponent = (iconNameOrComponent?: string | LucideIcon): LucideIcon => {
+    if (!iconNameOrComponent) return ICON_LIST[0].icon;
+    if (typeof iconNameOrComponent !== 'string') return iconNameOrComponent;
+    return ICON_LIST.find(item => item.name === iconNameOrComponent)?.icon || ICON_LIST[0].icon;
   }
 
   return (
@@ -156,7 +157,10 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
             <div className="grid grid-cols-4 items-center gap-4">
                <Label htmlFor="icon" className="text-right">Ícone</Label>
                <div className="col-span-3">
-                 <IconPicker selectedIcon={selectedIcon.icon} setSelectedIcon={(icon) => setSelectedIcon(ICON_LIST.find(i => i.icon === icon) || ICON_LIST[0])} />
+                 <IconPicker selectedIcon={selectedIcon.icon} setSelectedIcon={(iconComponent) => {
+                     const iconObject = ICON_LIST.find(i => i.icon === iconComponent) || ICON_LIST[0];
+                     setSelectedIcon(iconObject);
+                 }} />
                </div>
             </div>
           </div>
