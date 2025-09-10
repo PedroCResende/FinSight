@@ -11,7 +11,7 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
@@ -43,6 +43,8 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import * as firestoreService from '@/services/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ICON_LIST } from '@/components/dashboard/icon-picker';
+import { LucideIcon } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -76,8 +78,13 @@ export default function DashboardPage() {
             firestoreService.getCategories(user.uid),
             firestoreService.getGoals(user.uid)
           ]);
+           const categoriesWithIcons = categoriesData.map(cat => ({
+            ...cat,
+            icon: ICON_LIST.find(i => i.name === cat.icon)?.icon || ICON_LIST[0].icon,
+          }))
+
           setTransactions(transactionsData);
-          setCategories(categoriesData);
+          setCategories(categoriesWithIcons);
           setGoals(goalsData);
           setError(null);
         } catch (e) {
