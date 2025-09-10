@@ -68,7 +68,10 @@ export default function DashboardPage() {
   const [contributionAmount, setContributionAmount] = useState('');
   const { toast } = useToast();
   
-  const findIconComponent = (iconName: string): LucideIcon => {
+  const findIconComponent = (iconName: string | LucideIcon): LucideIcon => {
+    if (typeof iconName !== 'string') {
+      return iconName; // It's already the component
+    }
     return ICON_LIST.find(item => item.name === iconName)?.icon || ICON_LIST[0].icon;
   }
 
@@ -357,3 +360,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

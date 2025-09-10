@@ -43,7 +43,6 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   const openDialogForEdit = (category: Category) => {
     setCurrentCategory(category);
     setCategoryName(category.name);
-    // The icon coming from props is already a component, find the corresponding object in ICON_LIST
     const iconObject = ICON_LIST.find(item => item.icon === category.icon) || ICON_LIST[0];
     setSelectedIcon(iconObject);
     setIsDialogOpen(true);
@@ -167,3 +166,5 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     </Card>
   );
 }
+
+    
