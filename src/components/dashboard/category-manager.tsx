@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PlusCircle, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import type { Category } from '@/lib/types';
 import { IconPicker, ICON_LIST } from './icon-picker';
+import * as firestoreService from '@/services/firestore';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 interface CategoryManagerProps {
   categories: Category[];
@@ -23,51 +25,82 @@ interface CategoryManagerProps {
 }
 
 export function CategoryManager({ categories, setCategories }: CategoryManagerProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Partial<Category> | null>(null);
   const [categoryName, setCategoryName] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState<LucideIcon>(ICON_LIST[0].icon);
+  const [selectedIcon, setSelectedIcon] = useState<{ name: string, icon: LucideIcon }>(ICON_LIST[0]);
 
   const openDialogForNew = () => {
     setCurrentCategory({});
     setCategoryName('');
-    setSelectedIcon(ICON_LIST[0].icon);
+    setSelectedIcon(ICON_LIST[0]);
     setIsDialogOpen(true);
   };
 
   const openDialogForEdit = (category: Category) => {
     setCurrentCategory(category);
     setCategoryName(category.name);
-    setSelectedIcon(category.icon);
+    // Find the icon object from the list to set it properly
+    const iconObject = ICON_LIST.find(item => item.name === category.icon) || ICON_LIST[0];
+    setSelectedIcon(iconObject);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (categoryId: string) => {
-    setCategories(categories.filter((c) => c.id !== categoryId));
-  };
-
-  const handleSave = () => {
-    if (!categoryName) return;
-
-    if (currentCategory?.id) {
-      // Edit existing
-      setCategories(
-        categories.map((c) =>
-          c.id === currentCategory.id ? { ...c, name: categoryName, icon: selectedIcon } : c
-        )
-      );
-    } else {
-      // Add new
-      const newCategory: Category = {
-        id: `cat_${Date.now()}`,
-        name: categoryName,
-        icon: selectedIcon,
-        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
-      };
-      setCategories([...categories, newCategory]);
+  const handleDelete = async (categoryId: string) => {
+    if (!user) return;
+    try {
+      await firestoreService.deleteCategory(user.uid, categoryId);
+      setCategories(categories.filter((c) => c.id !== categoryId));
+      toast({ title: 'Sucesso', description: 'Categoria excluída.' });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a categoria.' });
     }
-    setIsDialogOpen(false);
   };
+
+  const handleSave = async () => {
+    if (!categoryName || !user) return;
+
+    const categoryData = {
+      name: categoryName,
+      icon: selectedIcon.name, // Save the icon name as a string
+      color: currentCategory?.id 
+        ? (currentCategory as Category).color 
+        : `hsl(${Math.random() * 360}, 70%, 50%)`,
+    };
+
+    try {
+      if (currentCategory?.id) {
+        // Edit existing
+        await firestoreService.updateCategory(user.uid, currentCategory.id, categoryData);
+        setCategories(
+          categories.map((c) =>
+            c.id === currentCategory.id ? { ...c, ...categoryData, icon: selectedIcon.icon } : c
+          )
+        );
+        toast({ title: 'Sucesso', description: 'Categoria atualizada.' });
+      } else {
+        // Add new
+        const newCategoryId = await firestoreService.addCategory(user.uid, categoryData);
+        const newCategory: Category = {
+          id: newCategoryId,
+          ...categoryData,
+          icon: selectedIcon.icon,
+        };
+        setCategories([...categories, newCategory]);
+        toast({ title: 'Sucesso', description: 'Categoria criada.' });
+      }
+      setIsDialogOpen(false);
+    } catch (e) {
+       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível salvar a categoria.' });
+    }
+  };
+
+  const findIconComponent = (iconName?: string | LucideIcon): LucideIcon => {
+    if (typeof iconName !== 'string') return iconName || ICON_LIST[0].icon;
+    return ICON_LIST.find(item => item.name === iconName)?.icon || ICON_LIST[0].icon;
+  }
 
   return (
     <Card>
@@ -82,20 +115,23 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
           </Button>
           <div className="rounded-md border">
             <div className="divide-y divide-border">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center p-4">
-                  <category.icon className="h-5 w-5 mr-4 text-muted-foreground" style={{ color: category.color }} />
-                  <span className="flex-1 font-medium">{category.name}</span>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(category)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+              {categories.map((category) => {
+                const IconComponent = findIconComponent(category.icon);
+                return (
+                  <div key={category.id} className="flex items-center p-4">
+                    <IconComponent className="h-5 w-5 mr-4 text-muted-foreground" style={{ color: category.color }} />
+                    <span className="flex-1 font-medium">{category.name}</span>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(category)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
               {categories.length === 0 && (
                 <p className="p-4 text-center text-muted-foreground">Nenhuma categoria encontrada.</p>
               )}
@@ -120,7 +156,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
             <div className="grid grid-cols-4 items-center gap-4">
                <Label htmlFor="icon" className="text-right">Ícone</Label>
                <div className="col-span-3">
-                 <IconPicker selectedIcon={selectedIcon} setSelectedIcon={setSelectedIcon} />
+                 <IconPicker selectedIcon={selectedIcon.icon} setSelectedIcon={(icon) => setSelectedIcon(ICON_LIST.find(i => i.icon === icon) || ICON_LIST[0])} />
                </div>
             </div>
           </div>

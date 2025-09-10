@@ -20,7 +20,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 
-export const ICON_LIST = [
+export const ICON_LIST: { name: string; icon: LucideIcon }[] = [
   { name: 'Home', icon: Home },
   { name: 'Car', icon: Car },
   { name: 'Food', icon: UtensilsCrossed },

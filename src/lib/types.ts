@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 export interface Category {
   id: string;
   name: string;
-  icon: LucideIcon; // On Firestore, we'll store the icon name as a string
+  icon: LucideIcon | string; // Allow string for icon name from DB
   color: string;
 }
 
