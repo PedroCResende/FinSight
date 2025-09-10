@@ -11,7 +11,6 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_CATEGORIES, MOCK_TRANSACTIONS, MOCK_GOALS } from '@/lib/mock-data';
 import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
@@ -41,50 +40,20 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-
-
-// Custom hook to check for achievements
-const useCheckAchievements = (
-    transactions: Transaction[], 
-    unlockedAchievements: UserAchievement[],
-    setUnlockedAchievements: React.Dispatch<React.SetStateAction<UserAchievement[]>>,
-    toast: (options: { title: string; description: string }) => void
-) => {
-  useEffect(() => {
-    const checkAndNotify = (achievementId: string) => {
-      // Check if achievement is already unlocked to prevent multiple toasts
-      if (!unlockedAchievements.some(a => a.achievementId === achievementId)) {
-        const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
-        if (achievement) {
-          toast({
-            title: '🏆 Conquista Desbloqueada!',
-            description: `Você ganhou: "${achievement.title}"`,
-          });
-        }
-        // Update the state
-        setUnlockedAchievements(prev => [...prev, { achievementId: achievementId, unlockedAt: new Date() }]);
-      }
-    };
-    
-    // Check for "Primeira Conquista"
-    const hasCategorizedTransaction = transactions.some(t => t.category);
-    if (hasCategorizedTransaction) {
-      checkAndNotify('ach_1');
-    }
-
-    // Add more achievement checks here in the future
-
-  // We depend on transactions and the list of unlocked achievements.
-  // This ensures the check re-runs if a new transaction is added or an achievement is unlocked by other means.
-  }, [transactions, unlockedAchievements, setUnlockedAchievements, toast]);
-};
-
+import { useAuth } from '@/contexts/auth-context';
+import * as firestoreService from '@/services/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState('standard');
@@ -96,53 +65,83 @@ export default function DashboardPage() {
   const [contributionGoal, setContributionGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
   const { toast } = useToast();
-
-  // Call the hook at the top level of the component
-  useCheckAchievements(
-      transactions,
-      unlockedAchievements,
-      setUnlockedAchievements,
-      toast
-  );
+  
+  useEffect(() => {
+    if (user) {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const [transactionsData, categoriesData, goalsData] = await Promise.all([
+            firestoreService.getTransactions(user.uid),
+            firestoreService.getCategories(user.uid),
+            firestoreService.getGoals(user.uid)
+          ]);
+          setTransactions(transactionsData);
+          setCategories(categoriesData);
+          setGoals(goalsData);
+          setError(null);
+        } catch (e) {
+          console.error("Failed to fetch data:", e);
+          setError("Falha ao carregar os dados. Por favor, tente novamente mais tarde.");
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar seus dados.' });
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [user, toast]);
 
 
   const handleSetTransactions = (newTransactions: Transaction[]) => {
+    if (!user) return;
     const newTxsWithIds = newTransactions.map((tx, index) => ({
       ...tx,
       id: `tx_${Date.now()}_${index}`,
     }));
+    // Here you would call the firestore service to add transactions
     setTransactions((prev) => [...prev, ...newTxsWithIds]);
   };
 
   const updateTransactionCategory = (transactionId: string, categoryId: string) => {
-    setTransactions(
-      transactions.map((t) =>
-        t.id === transactionId ? { ...t, category: categoryId } : t
-      )
-    );
+    if (!user) return;
+    firestoreService.updateTransaction(user.uid, transactionId, { category: categoryId })
+      .then(() => {
+        setTransactions(
+          transactions.map((t) =>
+            t.id === transactionId ? { ...t, category: categoryId } : t
+          )
+        );
+        toast({ title: 'Sucesso', description: 'Transação atualizada!' });
+      })
+      .catch(e => {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar a transação.' });
+      })
   };
   
     const handleAddContribution = () => {
-    if (!contributionGoal || !contributionAmount) return;
+    if (!contributionGoal || !contributionAmount || !user) return;
 
     const amount = parseFloat(contributionAmount);
     if (isNaN(amount) || amount <= 0) return;
 
-    setGoals(
-      goals.map(g => {
-        if (g.id === contributionGoal.id) {
-          const newSavedAmount = g.savedAmount + amount;
-          return {
-            ...g,
-            savedAmount: newSavedAmount,
-            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
-          };
-        }
-        return g;
-      })
-    );
-    setContributionGoal(null);
-    setContributionAmount('');
+    const newSavedAmount = contributionGoal.savedAmount + amount;
+    const updatedGoal = {
+        ...contributionGoal,
+        savedAmount: newSavedAmount,
+        status: newSavedAmount >= contributionGoal.targetAmount ? 'completed' : contributionGoal.status,
+    };
+    
+    firestoreService.updateGoal(user.uid, contributionGoal.id, { savedAmount: newSavedAmount, status: updatedGoal.status })
+        .then(() => {
+            setGoals(goals.map(g => g.id === contributionGoal.id ? updatedGoal : g));
+            setContributionGoal(null);
+            setContributionAmount('');
+            toast({ title: 'Sucesso!', description: 'Contribuição adicionada à sua meta.' });
+        })
+        .catch(e => {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível adicionar a contribuição.' });
+        })
   };
 
 
@@ -151,7 +150,7 @@ export default function DashboardPage() {
       const searchTermMatch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
       const categoryMatch = categoryFilter === 'all' || transaction.category === categoryFilter;
       
-      const transactionDate = new Date(transaction.date.replace(/(\\d{4})-(\\d{2})-(\\d{2})/, '$1/$2/$3'));
+      const transactionDate = new Date(transaction.date);
       const dateMatch = dateRange?.from && dateRange?.to
         ? transactionDate >= dateRange.from && transactionDate <= dateRange.to
         : true;
@@ -164,6 +163,21 @@ export default function DashboardPage() {
       return goals.filter(goal => goal.status === 'in-progress');
   }, [goals]);
 
+  if (loading) {
+      return (
+          <div className="flex min-h-screen w-full flex-col bg-background">
+              <Header />
+              <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                  <Skeleton className="h-32 w-full" />
+                  <div className="grid gap-4 md:grid-cols-2">
+                      <Skeleton className="h-64 w-full" />
+                      <Skeleton className="h-64 w-full" />
+                  </div>
+                   <Skeleton className="h-48 w-full" />
+              </main>
+          </div>
+      )
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -225,7 +239,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                  {activeGoals.length > 0 ? (
-                     <Carousel
+                    <Carousel
                         opts={{
                             align: "start",
                             loop: activeGoals.length > 3,
@@ -245,8 +259,8 @@ export default function DashboardPage() {
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
-                        <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
-                        <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+                        <CarouselPrevious />
+                        <CarouselNext />
                     </Carousel>
                  ) : (
                     <p className="text-center text-muted-foreground py-10">Nenhuma meta ativa no momento. Vá para a página de metas para criar uma.</p>

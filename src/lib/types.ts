@@ -3,13 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 export interface Category {
   id: string;
   name: string;
-  icon: LucideIcon;
+  icon: LucideIcon; // On Firestore, we'll store the icon name as a string
   color: string;
 }
 
 export interface Transaction {
   id: string;
-  date: string;
+  date: string; // Should be ISO string
   description: string;
   amount: number;
   category?: Category['id'];
@@ -19,7 +19,7 @@ export interface Budget {
     id: string;
     categoryId: Category['id'];
     limit: number;
-    current: number; // This will be calculated on the fly for the mock version
+    current: number; 
     month: string; // YYYY-MM
 }
 
@@ -28,7 +28,7 @@ export interface Achievement {
     title: string;
     description: string;
     icon: LucideIcon;
-    condition: string; // ex: 'firstCategorization', 'spentUnderBudget'
+    condition: string;
 }
 
 export interface UserAchievement {
@@ -44,4 +44,14 @@ export interface Goal {
   deadline: Date;
   status: 'in-progress' | 'completed' | 'failed';
   createdAt: Date;
+}
+
+// Auth Types
+export interface LoginCredentials {
+    email: string;
+    password?: string;
+}
+
+export interface SignUpCredentials extends LoginCredentials {
+    name: string;
 }

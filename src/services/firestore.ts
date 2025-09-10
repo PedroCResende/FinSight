@@ -1,0 +1,102 @@
+import { db } from '@/lib/firebase/config';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  writeBatch,
+  Timestamp,
+  serverTimestamp
+} from 'firebase/firestore';
+import type { Category, Transaction, Budget, Goal, UserAchievement } from '@/lib/types';
+
+
+// Helper to convert Firestore Timestamps
+const convertTimestamp = (data: any) => {
+    const a = { ...data };
+    for (const key in a) {
+        if (a[key] instanceof Timestamp) {
+            a[key] = a[key].toDate();
+        }
+    }
+    return a;
+}
+
+
+// --- CATEGORIES ---
+export async function getCategories(userId: string): Promise<Category[]> {
+  const categoriesRef = collection(db, `users/${userId}/categories`);
+  const q = query(categoriesRef);
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+}
+
+export async function addCategory(userId: string, categoryData: Omit<Category, 'id'>): Promise<string> {
+  const categoriesRef = collection(db, `users/${userId}/categories`);
+  const docRef = await addDoc(categoriesRef, categoryData);
+  return docRef.id;
+}
+
+export async function updateCategory(userId: string, categoryId: string, categoryData: Partial<Category>): Promise<void> {
+    const categoryDoc = doc(db, `users/${userId}/categories`, categoryId);
+    await updateDoc(categoryDoc, categoryData);
+}
+
+export async function deleteCategory(userId: string, categoryId: string): Promise<void> {
+    const categoryDoc = doc(db, `users/${userId}/categories`, categoryId);
+    await deleteDoc(categoryDoc);
+}
+
+
+// --- TRANSACTIONS ---
+export async function getTransactions(userId: string): Promise<Transaction[]> {
+    const transactionsRef = collection(db, `users/${userId}/transactions`);
+    const q = query(transactionsRef);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Transaction));
+}
+
+export async function addTransaction(userId: string, transactionData: Omit<Transaction, 'id'>): Promise<string> {
+  const transactionsRef = collection(db, `users/${userId}/transactions`);
+  const docRef = await addDoc(transactionsRef, transactionData);
+  return docRef.id;
+}
+
+export async function updateTransaction(userId: string, transactionId: string, transactionData: Partial<Transaction>): Promise<void> {
+    const transactionDoc = doc(db, `users/${userId}/transactions`, transactionId);
+    await updateDoc(transactionDoc, transactionData);
+}
+
+// --- GOALS ---
+export async function getGoals(userId: string): Promise<Goal[]> {
+    const goalsRef = collection(db, `users/${userId}/goals`);
+    const q = query(goalsRef);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Goal));
+}
+
+export async function addGoal(userId: string, goalData: Omit<Goal, 'id' | 'createdAt'>): Promise<string> {
+    const goalsRef = collection(db, `users/${userId}/goals`);
+    const docRef = await addDoc(goalsRef, {
+        ...goalData,
+        createdAt: serverTimestamp()
+    });
+    return docRef.id;
+}
+
+export async function updateGoal(userId: string, goalId: string, goalData: Partial<Goal>): Promise<void> {
+    const goalDoc = doc(db, `users/${userId}/goals`, goalId);
+    await updateDoc(goalDoc, goalData);
+}
+
+export async function deleteGoal(userId: string, goalId: string): Promise<void> {
+    const goalDoc = doc(db, `users/${userId}/goals`, goalId);
+    await deleteDoc(goalDoc);
+}
+
+
+// Implement other service functions for Budgets, Achievements etc. following the same pattern.

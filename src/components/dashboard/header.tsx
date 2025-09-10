@@ -13,9 +13,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, PiggyBank, Settings, Target, Goal, Award } from "lucide-react"
+import { LogOut, PiggyBank, Settings, User } from "lucide-react"
+import { useAuth } from '@/contexts/auth-context';
 
 export function Header() {
+  const { user, logout } = useAuth();
+
+  const getInitials = (email: string | null | undefined) => {
+    if (!email) return 'U';
+    return email[0].toUpperCase();
+  }
+
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
       <nav className="flex w-full flex-row items-center justify-between">
@@ -48,14 +56,14 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
               <Avatar>
-                <AvatarImage src="https://picsum.photos/40/40" alt="@user" data-ai-hint="person face" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} data-ai-hint="person face" />
+                <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
               </Avatar>
               <span className="sr-only">Alternar menu do usuário</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.email || 'Minha Conta'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <Link href="/settings">
               <DropdownMenuItem>
@@ -63,9 +71,8 @@ export function Header() {
                 <span>Configurações</span>
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sair</span>
             </DropdownMenuItem>

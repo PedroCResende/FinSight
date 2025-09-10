@@ -1,6 +1,9 @@
-import type { Category, Transaction, Budget, Goal, UserAchievement } from './types';
+import type { Category, Transaction, Budget, Goal } from './types';
 import { Home, UtensilsCrossed, ShoppingBag, Car, Film } from 'lucide-react';
 import { format, subDays, addMonths, startOfDay } from 'date-fns';
+
+// ESTE ARQUIVO SERÁ REMOVIDO NO FUTURO.
+// OS DADOS AGORA SÃO BUSCADOS DO FIRESTORE.
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat_1', name: 'Supermercado', icon: ShoppingBag, color: 'hsl(142.1, 76.2%, 36.3%)' },
@@ -58,7 +61,7 @@ export const MOCK_GOALS: Goal[] = [
     status: 'in-progress',
     createdAt: subDays(startOfDay(today), 30),
   },
-  {
+    {
     id: 'goal_6',
     title: 'Curso de Inglês',
     targetAmount: 2500,
