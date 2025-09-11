@@ -12,7 +12,9 @@ import {
   doc,
   writeBatch,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  Query,
+  documentId,
 } from 'firebase/firestore';
 import type { Category, Transaction, Budget, Goal, UserAchievement } from '@/lib/types';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -63,11 +65,50 @@ export async function getTransactions(userId: string): Promise<Transaction[]> {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Transaction));
 }
 
-export async function addTransaction(userId: string, transactionData: Omit<Transaction, 'id'>): Promise<string> {
+export async function addTransactionsWithDeduplication(
+  userId: string,
+  transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]
+): Promise<Transaction[]> {
   const transactionsRef = collection(db, `users/${userId}/transactions`);
-  const docRef = await addDoc(transactionsRef, transactionData);
-  return docRef.id;
+  const incomingHashes = transactions.map(t => t.hash);
+
+  // Firestore 'in' query can have at most 30 elements. We need to chunk.
+  const chunk = <T>(arr: T[], size: number) =>
+    Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+      arr.slice(i * size, i * size + size)
+    );
+
+  const hashChunks = chunk(incomingHashes, 30);
+  const existingHashes = new Set<string>();
+
+  for (const hashChunk of hashChunks) {
+    if (hashChunk.length === 0) continue;
+    const q = query(transactionsRef, where('hash', 'in', hashChunk));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(doc => {
+      existingHashes.add(doc.data().hash);
+    });
+  }
+
+  const newTransactions = transactions.filter(t => !existingHashes.has(t.hash));
+
+  if (newTransactions.length === 0) {
+    return [];
+  }
+
+  const batch = writeBatch(db);
+  const addedDocs: Transaction[] = [];
+
+  newTransactions.forEach(txData => {
+    const docRef = doc(collection(db, `users/${userId}/transactions`));
+    batch.set(docRef, txData);
+    addedDocs.push({ id: docRef.id, ...txData });
+  });
+
+  await batch.commit();
+  return addedDocs;
 }
+
 
 export async function updateTransaction(userId: string, transactionId: string, transactionData: Partial<Transaction>): Promise<void> {
     const transactionDoc = doc(db, `users/${userId}/transactions`, transactionId);

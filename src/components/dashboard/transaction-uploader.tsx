@@ -10,7 +10,7 @@ import { Upload, Sparkles } from 'lucide-react';
 import { parseBankStatementCsv } from '@/ai/flows/smart-csv-parser-flow';
 
 interface TransactionUploaderProps {
-  onUpload: (transactions: Omit<Transaction, 'id' | 'category'>[]) => void;
+  onUpload: (transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]) => void;
 }
 
 export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
@@ -45,7 +45,13 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o arquivo é um extrato CSV válido.");
         }
 
-        onUpload(result.transactions);
+        // Generate a simple hash for deduplication
+        const transactionsWithHashes = result.transactions.map(tx => {
+            const hash = `${tx.date}-${tx.description.trim()}-${tx.amount}`;
+            return { ...tx, hash };
+        });
+
+        onUpload(transactionsWithHashes);
         
       } catch (error) {
         console.error(error);

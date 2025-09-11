@@ -39,7 +39,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
-import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransaction } from '@/services/firestore';
+import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransactionsWithDeduplication } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useAchievements } from '@/contexts/achievements-context';
@@ -86,19 +86,21 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const handleSetTransactions = async (newTransactions: Omit<Transaction, 'id'>[]) => {
+  const handleSetTransactions = async (newTransactions: (Omit<Transaction, 'id' | 'hash'> & {hash: string})[]) => {
     if (!user) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para adicionar transações.' });
         return;
     }
     try {
-        const addedTransactions: Transaction[] = [];
-        for (const txData of newTransactions) {
-            const newId = await addTransaction(user.uid, txData);
-            addedTransactions.push({ id: newId, ...txData });
+        const addedTransactions = await addTransactionsWithDeduplication(user.uid, newTransactions);
+        
+        if (addedTransactions.length > 0) {
+            setTransactions((prev) => [...prev, ...addedTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            toast({ title: 'Sucesso', description: `${addedTransactions.length} novas transações importadas. ${newTransactions.length - addedTransactions.length} duplicatas ignoradas.` });
+        } else {
+             toast({ title: 'Nenhuma transação nova', description: 'Todas as transações do arquivo já existiam e foram ignoradas.' });
         }
-        setTransactions((prev) => [...prev, ...addedTransactions]);
-        toast({ title: 'Sucesso', description: `${addedTransactions.length} transações importadas.` });
+        
     } catch (error) {
         console.error("Error adding transactions:", error);
         toast({ variant: 'destructive', title: 'Erro ao importar', description: 'Não foi possível salvar as transações.' });

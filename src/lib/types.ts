@@ -13,6 +13,7 @@ export interface Transaction {
   description: string;
   amount: number;
   category?: Category['id'];
+  hash?: string; // Unique hash to prevent duplicates
 }
 
 export interface Budget {
