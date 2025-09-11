@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // The input is the raw string content of the CSV file.
 export type ParseBankStatementCsvInput = string;
