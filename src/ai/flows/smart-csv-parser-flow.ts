@@ -63,7 +63,7 @@ const parseBankStatementCsvFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    if (!output || !output.transactions) {
+    if (!output?.transactions) {
       throw new Error('AI failed to parse transactions from the CSV content.');
     }
     return output;
