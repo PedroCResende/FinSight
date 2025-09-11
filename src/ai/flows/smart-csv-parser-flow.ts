@@ -38,9 +38,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert financial data analyst. Your task is to parse the text from a bank statement CSV file and convert it into a structured JSON format.
 
 Here is the raw CSV content:
-'''
-{{{input}}}
-'''
+{{input}}
 
 Follow these instructions carefully:
 1.  **Identify Transactions:** Scan the file and identify the rows that represent actual financial transactions. Ignore any header rows, summary lines, or empty lines.
@@ -65,6 +63,9 @@ const parseBankStatementCsvFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    if (!output || !output.transactions) {
+      throw new Error('AI failed to parse transactions from the CSV content.');
+    }
+    return output;
   }
 );
