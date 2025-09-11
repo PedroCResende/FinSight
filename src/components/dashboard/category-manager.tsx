@@ -13,17 +13,32 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Pencil, Trash2, type LucideIcon } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, type LucideIcon, Palette } from 'lucide-react';
 import type { Category } from '@/lib/types';
-import { IconPicker, ICON_LIST, findIconComponent, findIconInfo } from './icon-picker';
+import { IconPicker, ICON_LIST, findIconInfo } from './icon-picker';
 import { useAuth } from '@/contexts/auth-context';
 import { addCategory, updateCategory, deleteCategory } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface CategoryManagerProps {
   categories: Category[];
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
 }
+
+const PRESET_COLORS = [
+  'hsl(142.1, 76.2%, 36.3%)',
+  'hsl(22.1, 83.3%, 53.3%)',
+  'hsl(212, 45%, 53%)',
+  'hsl(346.8, 77.2%, 49.8%)',
+  'hsl(262.1, 83.3%, 57.8%)',
+  'hsl(47.9, 95.8%, 53.1%)',
+  'hsl(210, 100%, 50%)',
+  'hsl(170, 78.4%, 37.3%)',
+  'hsl(317.4, 65.4%, 50.8%)',
+  'hsl(0, 72.2%, 50.6%)',
+];
+
 
 export function CategoryManager({ categories, setCategories }: CategoryManagerProps) {
   const { user } = useAuth();
@@ -32,11 +47,13 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
   const [currentCategory, setCurrentCategory] = useState<Partial<Category> | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [selectedIconInfo, setSelectedIconInfo] = useState(ICON_LIST[0]);
+  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
 
   const openDialogForNew = () => {
     setCurrentCategory({});
     setCategoryName('');
     setSelectedIconInfo(ICON_LIST[0]);
+    setSelectedColor(PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]);
     setIsDialogOpen(true);
   };
 
@@ -45,6 +62,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     setCategoryName(category.name);
     const iconInfo = findIconInfo(category.icon);
     setSelectedIconInfo(iconInfo || ICON_LIST[0]);
+    setSelectedColor(category.color);
     setIsDialogOpen(true);
   };
 
@@ -75,12 +93,12 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     try {
         if (currentCategory?.id) {
             // Edit existing
-            const updatedData = { name: categoryName, icon: selectedIconInfo.name };
+            const updatedData = { name: categoryName, icon: selectedIconInfo.name, color: selectedColor };
             await updateCategory(user.uid, currentCategory.id, updatedData);
             setCategories(
                 categories.map((c) =>
                 c.id === currentCategory.id
-                    ? { ...c, name: categoryName, icon: selectedIconInfo.icon }
+                    ? { ...c, name: categoryName, icon: selectedIconInfo.icon, color: selectedColor }
                     : c
                 )
             );
@@ -90,7 +108,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
             const newCategoryData = {
                 name: categoryName,
                 icon: selectedIconInfo.name,
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                color: selectedColor,
             };
             const newId = await addCategory(user.uid, newCategoryData);
             const newCategory: Category = {
@@ -171,6 +189,25 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
                  }} />
                </div>
             </div>
+             <div className="grid grid-cols-4 items-start gap-4 pt-2">
+                <Label className="text-right pt-2">Cor</Label>
+                <div className="col-span-3 grid grid-cols-5 gap-2">
+                {PRESET_COLORS.map((color) => (
+                    <button
+                        key={color}
+                        type="button"
+                        className={cn(
+                            "h-8 w-8 rounded-full border-2 transition-all",
+                            selectedColor === color ? 'border-primary ring-2 ring-ring' : 'border-transparent'
+                        )}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setSelectedColor(color)}
+                    >
+                        <span className="sr-only">{color}</span>
+                    </button>
+                ))}
+                </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
@@ -181,5 +218,3 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
     </Card>
   );
 }
-
-    

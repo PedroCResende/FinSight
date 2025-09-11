@@ -1,3 +1,4 @@
+
 'use client';
 import { db } from '@/lib/firebase/config';
 import {
@@ -37,13 +38,13 @@ export async function getCategories(userId: string): Promise<Category[]> {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
 }
 
-export async function addCategory(userId: string, categoryData: Omit<Category, 'id' | 'icon'> & { icon: string }): Promise<string> {
+export async function addCategory(userId: string, categoryData: Omit<Category, 'id' | 'icon'> & { icon: string, color: string }): Promise<string> {
   const categoriesRef = collection(db, `users/${userId}/categories`);
   const docRef = await addDoc(categoriesRef, categoryData);
   return docRef.id;
 }
 
-export async function updateCategory(userId: string, categoryId: string, categoryData: Partial<Omit<Category, 'icon'> & { icon: string }>): Promise<void> {
+export async function updateCategory(userId: string, categoryId: string, categoryData: Partial<Omit<Category, 'icon'> & { icon: string, color: string }>): Promise<void> {
     const categoryDoc = doc(db, `users/${userId}/categories`, categoryId);
     await updateDoc(categoryDoc, categoryData);
 }
