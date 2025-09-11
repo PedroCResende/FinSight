@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -211,22 +212,32 @@ export default function DashboardPage() {
   }, [goals]);
 
   const handleGenerateReport = () => {
-    // Prepare categories for serialization by removing icon components
-    const serializableCategories = categories.map(c => {
-      const iconName = findIconInfo(c.icon)?.name || 'Other';
-      return { ...c, icon: iconName };
-    });
+    const serializableCategories = categories.map(c => ({
+      ...c,
+      icon: findIconInfo(c.icon)?.name || 'Other',
+    }));
+
+    const serializableGoals = goals.map(g => ({
+      ...g,
+      deadline: g.deadline.toISOString(),
+      createdAt: g.createdAt?.toISOString(),
+    }));
 
     const reportData = {
-        transactions: filteredTransactions,
-        categories: serializableCategories,
-        goals,
-        dateRange,
-        generatedAt: new Date().toISOString(),
+      transactions: filteredTransactions,
+      categories: serializableCategories,
+      goals: serializableGoals,
+      dateRange,
+      generatedAt: new Date().toISOString(),
     };
     
-    sessionStorage.setItem('reportData', JSON.stringify(reportData));
-    window.open('/report', '_blank');
+    try {
+      sessionStorage.setItem('reportData', JSON.stringify(reportData));
+      window.open('/report', '_blank');
+    } catch (error) {
+      console.error('Failed to save report data to session storage:', error);
+      toast({ variant: 'destructive', title: 'Erro ao gerar relatório', description: 'Não foi possível salvar os dados do relatório. Tente novamente.' });
+    }
   };
 
   return (

@@ -39,20 +39,26 @@ export default function ReportPage() {
   useEffect(() => {
     const savedData = sessionStorage.getItem('reportData');
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      
-      const categoriesWithIcons = parsedData.categories.map((c: Category) => ({
-          ...c,
-          icon: findIconComponent(c.icon as string)!,
-      }));
+      try {
+        const parsedData = JSON.parse(savedData);
+        
+        const categoriesWithIcons = parsedData.categories.map((c: any) => ({
+            ...c,
+            icon: findIconComponent(c.icon as string)!,
+        }));
 
-      setData({ ...parsedData, categories: categoriesWithIcons });
-      
-      // Auto-trigger print dialog after a short delay
-      setTimeout(() => window.print(), 1000);
-    } else {
-      // If there's no data, maybe redirect back or show a message
-      // For now, we'll just stop loading and show an empty state.
+        const goalsWithDates = parsedData.goals.map((g: any) => ({
+            ...g,
+            deadline: new Date(g.deadline),
+            createdAt: g.createdAt ? new Date(g.createdAt) : undefined,
+        }));
+
+        setData({ ...parsedData, categories: categoriesWithIcons, goals: goalsWithDates });
+        
+        setTimeout(() => window.print(), 1000);
+      } catch (error) {
+        console.error('Failed to parse report data:', error);
+      }
     }
     setLoading(false);
   }, [router]);
