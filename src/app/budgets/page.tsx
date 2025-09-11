@@ -22,12 +22,12 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
-import type { Budget, Category } from '@/lib/types';
-import { format } from 'date-fns';
+import type { Budget, Category, Transaction } from '@/lib/types';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
-import { getBudgets, addBudget, updateBudget, deleteBudget, getCategories } from '@/services/firestore';
+import { getBudgets, addBudget, updateBudget, deleteBudget, getCategories, getTransactions } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useAchievements } from '@/contexts/achievements-context';
 
@@ -39,6 +39,7 @@ export default function BudgetsPage() {
   
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<Partial<Budget> | null>(null);
@@ -48,9 +49,10 @@ export default function BudgetsPage() {
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
-        const [firestoreBudgets, firestoreCategories] = await Promise.all([
+        const [firestoreBudgets, firestoreCategories, firestoreTransactions] = await Promise.all([
             getBudgets(user.uid),
             getCategories(user.uid),
+            getTransactions(user.uid),
         ]);
 
         const categoriesWithIcons = firestoreCategories.map(c => ({
@@ -59,11 +61,71 @@ export default function BudgetsPage() {
         }));
         setCategories(categoriesWithIcons);
         setBudgets(firestoreBudgets);
+        setTransactions(firestoreTransactions);
       };
 
       fetchData();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user || budgets.length === 0 || transactions.length === 0) return;
+
+    const lastMonth = subMonths(new Date(), 1);
+    const lastMonthString = format(lastMonth, 'yyyy-MM');
+    const lastMonthStart = startOfMonth(lastMonth);
+    const lastMonthEnd = endOfMonth(lastMonth);
+
+    const currentMonth = new Date();
+    const currentMonthString = format(currentMonth, 'yyyy-MM');
+    const currentMonthStart = startOfMonth(currentMonth);
+    const currentMonthEnd = endOfMonth(currentMonth);
+    
+    // Check 'reducedCategorySpendingBy15Percent'
+    budgets.forEach(budget => {
+        const lastMonthSpending = transactions
+            .filter(t => t.categoryId === budget.categoryId && new Date(t.date) >= lastMonthStart && new Date(t.date) <= lastMonthEnd && t.amount < 0)
+            .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+        
+        const currentMonthSpending = transactions
+            .filter(t => t.categoryId === budget.categoryId && new Date(t.date) >= currentMonthStart && new Date(t.date) <= currentMonthEnd && t.amount < 0)
+            .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+        if (lastMonthSpending > 0 && currentMonthSpending < lastMonthSpending * 0.85) {
+            checkAndUnlockAchievement('reducedCategorySpendingBy15Percent');
+        }
+    });
+
+    // Check 'spentUnderBudget'
+    const lastMonthBudgets = budgets.filter(b => b.month === lastMonthString);
+    if (lastMonthBudgets.length > 0) {
+        const allUnderBudget = lastMonthBudgets.every(budget => {
+            const spent = transactions
+                .filter(t => t.categoryId === budget.categoryId && new Date(t.date) >= lastMonthStart && new Date(t.date) <= lastMonthEnd && t.amount < 0)
+                .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+            return spent <= budget.limit;
+        });
+
+        if (allUnderBudget) {
+            checkAndUnlockAchievement('spentUnderBudget');
+        }
+    }
+    
+    // Check 'spent20PercentUnderBudget'
+    if (lastMonthBudgets.length > 0) {
+        const totalBudget = lastMonthBudgets.reduce((acc, b) => acc + b.limit, 0);
+        const totalSpent = transactions
+            .filter(t => new Date(t.date) >= lastMonthStart && new Date(t.date) <= lastMonthEnd && t.amount < 0 && lastMonthBudgets.some(b => b.categoryId === t.categoryId))
+            .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+        if (totalBudget > 0 && totalSpent <= totalBudget * 0.8) {
+            checkAndUnlockAchievement('spent20PercentUnderBudget');
+        }
+    }
+
+
+  }, [budgets, transactions, user, checkAndUnlockAchievement]);
+
 
   const activeBudgets = useMemo(() => {
     const currentMonth = format(new Date(), 'yyyy-MM');
@@ -185,7 +247,7 @@ export default function BudgetsPage() {
                   <div key={budget.id} className="flex items-center p-4">
                     <div className="flex-1">
                       <p className="font-medium">{getCategoryName(budget.categoryId)}</p>
-                      <p className="text-sm text-muted-foreground">Limite: {formatCurrency(budget.limit)} / mês</p>
+                      <p className="text-sm text-muted-foreground">Limite: {formatCurrency(budget.limit)} / mês ({budget.month})</p>
                     </div>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openDialogForEdit(budget)}>
@@ -244,3 +306,5 @@ export default function BudgetsPage() {
     </div>
   );
 }
+
+    
