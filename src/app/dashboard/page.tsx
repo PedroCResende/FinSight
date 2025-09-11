@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
 import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransactionsWithDeduplication, deleteTransaction } from '@/services/firestore';
-import { findIconComponent } from '@/components/dashboard/icon-picker';
+import { findIconComponent, findIconInfo } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useAchievements } from '@/contexts/achievements-context';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
@@ -211,13 +211,20 @@ export default function DashboardPage() {
   }, [goals]);
 
   const handleGenerateReport = () => {
+    // Prepare categories for serialization by removing icon components
+    const serializableCategories = categories.map(c => {
+      const iconName = findIconInfo(c.icon)?.name || 'Other';
+      return { ...c, icon: iconName };
+    });
+
     const reportData = {
         transactions: filteredTransactions,
-        categories,
+        categories: serializableCategories,
         goals,
         dateRange,
         generatedAt: new Date().toISOString(),
     };
+    
     sessionStorage.setItem('reportData', JSON.stringify(reportData));
     window.open('/report', '_blank');
   };
