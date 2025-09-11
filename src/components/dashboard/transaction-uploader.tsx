@@ -23,6 +23,14 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     }
   };
 
+  const parseCsvLine = (line: string): string[] => {
+    // Regex to split by comma but ignore commas inside quotes
+    const regex = /(".*?"|[^",]+)(?=\s*,|\s*$)/g;
+    const matches = line.match(regex) || [];
+    return matches.map(field => field.replace(/"/g, '').trim());
+  };
+
+
   const handleUpload = () => {
     if (!file) {
       toast({
@@ -48,27 +56,18 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         }
 
         const transactions: Omit<Transaction, 'id' | 'category'>[] = dataLines.map((line, index) => {
-            const sanitizedLine = line.trim();
-            if (!sanitizedLine) {
-                // Should be filtered out, but as a safeguard
-                throw new Error(`Linha vazia encontrada na posição ${index + 2}.`);
-            }
+            const columns = parseCsvLine(line);
 
-            const firstCommaIndex = sanitizedLine.indexOf(',');
-            const lastCommaIndex = sanitizedLine.lastIndexOf(',');
-
-            if (firstCommaIndex === -1 || lastCommaIndex === -1 || firstCommaIndex === lastCommaIndex) {
-                 throw new Error(`A linha ${index + 2} parece estar mal formatada. Verifique o número de colunas.`);
+            if (columns.length < 3) {
+                 throw new Error(`A linha ${index + 2} está mal formatada ou incompleta. Verifique se ela possui 3 colunas: Data, Descrição e Valor.`);
             }
             
-            const date = sanitizedLine.substring(0, firstCommaIndex).trim().replace(/"/g, '');
-            const description = sanitizedLine.substring(firstCommaIndex + 1, lastCommaIndex).trim().replace(/"/g, '');
-            const amountStr = sanitizedLine.substring(lastCommaIndex + 1).trim().replace(/"/g, '');
-            const amount = parseFloat(amountStr);
-
+            // Assume a ordem: Data, Descrição, Valor
+            const [date, description, amountStr, ..._rest] = columns;
+            const amount = parseFloat(amountStr.replace(',', '.')); // Replace comma with dot for decimals
 
             if (!date || isNaN(amount) || !description) {
-                 throw new Error(`Erro ao processar a linha ${index + 2}. Verifique se os dados de data, descrição e valor estão corretos.`);
+                 throw new Error(`Erro ao processar a linha ${index + 2}. Verifique se os dados de data, descrição e valor estão corretos e não estão em branco.`);
             }
 
             // Convert DD/MM/YYYY to YYYY-MM-DD
