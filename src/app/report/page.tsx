@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
-import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, MinusCircle, Scale } from 'lucide-react';
+import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ReportData {

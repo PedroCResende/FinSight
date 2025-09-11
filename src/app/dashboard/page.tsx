@@ -43,12 +43,14 @@ import { findIconComponent, findIconInfo } from '@/components/dashboard/icon-pic
 import { useToast } from '@/hooks/use-toast';
 import { useAchievements } from '@/contexts/achievements-context';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { useRouter } from 'next/navigation';
 
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { unlockedAchievements, checkAndUnlockAchievement } = useAchievements();
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -216,26 +218,23 @@ export default function DashboardPage() {
       icon: findIconInfo(c.icon)?.name || 'Other', // Convert icon component to string name
     }));
 
-    const serializableGoals = goals.map(g => ({
-      ...g,
-      deadline: g.deadline.toISOString(), // Convert Date object to string
-      createdAt: g.createdAt?.toISOString(), // Convert Date object to string
-    }));
-
     const reportData = {
       transactions: filteredTransactions,
       categories: serializableCategories,
-      goals: serializableGoals,
+      goals: goals,
       dateRange,
       generatedAt: new Date().toISOString(),
     };
     
     try {
-      localStorage.setItem('reportData', JSON.stringify(reportData));
-      window.open('/report', '_blank');
+      // Use router to navigate and pass data via state
+      const reportDataString = JSON.stringify(reportData);
+      sessionStorage.setItem('reportDataForGenerate', reportDataString);
+      router.push('/report/generate');
+      
     } catch (error) {
-      console.error('Failed to save report data to localStorage:', error);
-      toast({ variant: 'destructive', title: 'Erro ao gerar relatório', description: 'Não foi possível salvar os dados do relatório. Tente novamente.' });
+      console.error('Failed to prepare report data:', error);
+      toast({ variant: 'destructive', title: 'Erro ao gerar relatório', description: 'Não foi possível preparar os dados do relatório. Tente novamente.' });
     }
   };
 
