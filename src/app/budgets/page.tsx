@@ -39,7 +39,6 @@ export default function BudgetsPage() {
   
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentBudget, setCurrentBudget] = useState<Partial<Budget> | null>(null);
@@ -51,10 +50,9 @@ export default function BudgetsPage() {
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
-        const [firestoreBudgets, firestoreCategories, firestoreTransactions] = await Promise.all([
+        const [firestoreBudgets, firestoreCategories] = await Promise.all([
             getBudgets(user.uid),
             getCategories(user.uid),
-            getTransactions(user.uid)
         ]);
 
         const categoriesWithIcons = firestoreCategories.map(c => ({
@@ -63,7 +61,6 @@ export default function BudgetsPage() {
         }));
         setCategories(categoriesWithIcons);
         setBudgets(firestoreBudgets);
-        setTransactions(firestoreTransactions);
       };
 
       fetchData();
@@ -72,18 +69,8 @@ export default function BudgetsPage() {
 
   const activeBudgets = useMemo(() => {
     const currentMonth = format(new Date(), 'yyyy-MM');
-    return budgets
-      .filter(budget => budget.month === currentMonth)
-      .map(budget => {
-        const spent = transactions
-          .filter(t => t.category === budget.categoryId && t.amount < 0 && format(new Date(t.date), 'yyyy-MM') === currentMonth)
-          .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-        return {
-          ...budget,
-          current: spent,
-        };
-      });
-  }, [budgets, transactions]);
+    return budgets.filter(budget => budget.month === currentMonth);
+  }, [budgets]);
   
   const checkAchievement = (achievementId: string) => {
     if (!unlockedAchievements.some(a => a.achievementId === achievementId)) {
