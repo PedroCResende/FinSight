@@ -39,25 +39,34 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
       const content = e.target?.result as string;
       try {
         const lines = content.split('\n');
-        // Assume header: 'Date', 'Description', 'Value'
-        const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        const dateIndex = header.indexOf('Date');
-        const descriptionIndex = header.indexOf('Description');
-        const valueIndex = header.indexOf('Value');
         
-        if (dateIndex === -1 || descriptionIndex === -1 || valueIndex === -1) {
-            throw new Error("Formato CSV inválido. Colunas necessárias: 'Date', 'Description', 'Value'");
+        // Remove o cabeçalho e filtra linhas vazias
+        const dataLines = lines.slice(1).filter(line => line.trim() !== '');
+
+        if (dataLines.length === 0) {
+          throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
         }
 
-        const transactions: Omit<Transaction, 'id' | 'category'>[] = lines
-          .slice(1)
-          .filter(line => line.trim() !== '')
-          .map((line) => {
+        const transactions: Omit<Transaction, 'id' | 'category'>[] = dataLines.map((line, index) => {
+            // Lida com descrições que podem conter vírgulas, uma limitação comum de split(',')
             const values = line.split(',');
+            if (values.length < 3) {
+                 throw new Error(`A linha ${index + 2} parece estar mal formatada. Verifique o número de colunas.`);
+            }
+            
+            // Assumimos a ordem: Data, Descrição, Valor
+            const date = values[0].trim();
+            const amount = parseFloat(values[values.length - 1].trim()); // Valor é sempre o último
+            const description = values.slice(1, -1).join(',').trim().replace(/"/g, ''); // O que sobrar é a descrição
+
+            if (!date || isNaN(amount) || !description) {
+                 throw new Error(`Erro ao processar a linha ${index + 2}. Verifique se os dados de data, descrição e valor estão corretos.`);
+            }
+
             return {
-              date: values[dateIndex].trim(),
-              description: values[descriptionIndex].trim().replace(/"/g, ''),
-              amount: parseFloat(values[valueIndex]),
+              date: date,
+              description: description,
+              amount: amount,
             };
           });
         
@@ -84,7 +93,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     <Card>
       <CardHeader>
         <CardTitle>Enviar Transações</CardTitle>
-        <CardDescription>Envie um arquivo CSV com suas transações bancárias. As colunas devem ser: Date, Description, Value.</CardDescription>
+        <CardDescription>Envie um arquivo CSV. As colunas devem estar na ordem: Data, Descrição, Valor.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2">
