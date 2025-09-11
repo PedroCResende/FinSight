@@ -17,7 +17,7 @@ import { AchievementsDisplay } from '@/components/dashboard/achievements-display
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
 import { GoalCard } from '@/components/dashboard/goal-card';
-import { LayoutGrid, List, ArrowRight } from 'lucide-react';
+import { LayoutGrid, List, ArrowRight, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -210,6 +210,18 @@ export default function DashboardPage() {
       return goals.filter(goal => goal.status === 'in-progress');
   }, [goals]);
 
+  const handleGenerateReport = () => {
+    const reportData = {
+        transactions: filteredTransactions,
+        categories,
+        goals,
+        dateRange,
+        generatedAt: new Date().toISOString(),
+    };
+    sessionStorage.setItem('reportData', JSON.stringify(reportData));
+    window.open('/report', '_blank');
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
@@ -217,7 +229,11 @@ export default function DashboardPage() {
 
         <SmartQuery transactions={transactions} categories={categories} goals={goals} />
 
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+            <Button onClick={handleGenerateReport} variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Gerar Relatório
+            </Button>
             <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
                 <TabsList>
                     <TabsTrigger value="standard"><LayoutGrid className="mr-2 h-4 w-4" /> Visão Padrão</TabsTrigger>
