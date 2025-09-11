@@ -160,5 +160,19 @@ export async function updateBudgetOnTransactionChange(userId: string, categoryId
     await updateDoc(budgetDoc.ref, { current: totalSpent });
 }
 
+// --- ACHIEVEMENTS ---
+export async function getAchievements(userId: string): Promise<UserAchievement[]> {
+    const achievementsRef = collection(db, `users/${userId}/achievements`);
+    const q = query(achievementsRef);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as UserAchievement));
+}
 
-// Implement other service functions for Achievements etc. following the same pattern.
+export async function unlockAchievement(userId: string, achievementId: string): Promise<string> {
+    const achievementsRef = collection(db, `users/${userId}/achievements`);
+    const docRef = await addDoc(achievementsRef, {
+        achievementId: achievementId,
+        unlockedAt: serverTimestamp(),
+    });
+    return docRef.id;
+}

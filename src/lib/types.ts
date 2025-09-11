@@ -32,6 +32,7 @@ export interface Achievement {
 }
 
 export interface UserAchievement {
+    id: string; // Firestore document ID
     achievementId: string;
     unlockedAt: Date;
 }

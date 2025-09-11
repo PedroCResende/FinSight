@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+import { AchievementsProvider } from '@/contexts/achievements-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
@@ -12,7 +13,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <AchievementsProvider>
+                {children}
+            </AchievementsProvider>
           </AuthProvider>
         </ThemeProvider>
     );
