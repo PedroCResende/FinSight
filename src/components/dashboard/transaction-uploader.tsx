@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { Upload } from 'lucide-react';
+import { Upload, Sparkles } from 'lucide-react';
+import { parseBankStatementCsv } from '@/ai/flows/smart-csv-parser-flow';
 
 interface TransactionUploaderProps {
   onUpload: (transactions: Omit<Transaction, 'id' | 'category'>[]) => void;
@@ -35,68 +36,23 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
 
     setIsParsing(true);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
       try {
-        const lines = content.split('\n').filter(line => line.trim() !== '');
-
-        // Encontrar o índice da linha do cabeçalho real
-        const headerIndex = lines.findIndex(line => line.startsWith('Data Lançamento'));
+        const result = await parseBankStatementCsv(content);
         
-        if (headerIndex === -1) {
-            throw new Error("Cabeçalho 'Data Lançamento,Data Contábil,Título,Descrição,Entrada(R$),Saída(R$),Saldo do Dia(R$)' não encontrado. O arquivo parece não ser um extrato válido do C6 Bank.");
+        if (!result.transactions || result.transactions.length === 0) {
+            throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o arquivo é um extrato CSV válido.");
         }
 
-        // Pegar apenas as linhas de dados, pulando os cabeçalhos e informações do banco
-        const dataLines = lines.slice(headerIndex + 1);
-
-        if (dataLines.length === 0) {
-          throw new Error("O arquivo CSV não contém nenhuma linha de dados após o cabeçalho.");
-        }
-
-        const transactions: Omit<Transaction, 'id' | 'category'>[] = dataLines.map((line, index) => {
-            const columns = line.split(',');
-
-            if (columns.length < 7) {
-                 throw new Error(`A linha ${headerIndex + index + 2} está mal formatada. Esperava 7 colunas, mas encontrei ${columns.length}.`);
-            }
-            
-            // Colunas esperadas: Data Lançamento, Data Contábil, Título, Descrição, Entrada(R$), Saída(R$), Saldo do Dia(R$)
-            const [date, _date2, title, _description, entryStr, exitStr, ..._rest] = columns;
-            
-            const entryValue = parseFloat(entryStr.replace(',', '.')) || 0;
-            const exitValue = parseFloat(exitStr.replace(',', '.')) || 0;
-
-            const amount = entryValue > 0 ? entryValue : -Math.abs(exitValue);
-            
-            if (!date || isNaN(amount) || !title) {
-                 throw new Error(`Erro ao processar a linha ${headerIndex + index + 2}. Verifique se os dados de data, título e valores estão corretos.`);
-            }
-
-            // Converter DD/MM/YYYY para YYYY-MM-DD
-            const dateParts = date.split('/');
-            let formattedDate = date;
-            if (dateParts.length === 3) {
-                 const [day, month, year] = dateParts;
-                 if (day.length === 2 && month.length === 2 && year.length === 4) {
-                    formattedDate = `${year}-${month}-${day}`;
-                 }
-            }
-
-            return {
-              date: formattedDate,
-              description: title,
-              amount: amount,
-            };
-          });
-        
-        onUpload(transactions);
+        onUpload(result.transactions);
         
       } catch (error) {
+        console.error(error);
         toast({
           variant: 'destructive',
           title: 'Falha no upload',
-          description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido durante a análise.',
+          description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido durante a análise do arquivo pela IA.',
         });
       } finally {
         setIsParsing(false);
@@ -106,21 +62,32 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         if(fileInput) fileInput.value = '';
       }
     };
-    reader.readAsText(file, 'latin1'); // Use 'latin1' para lidar com caracteres especiais comuns em extratos brasileiros
+    reader.onerror = () => {
+        setIsParsing(false);
+        toast({
+            variant: 'destructive',
+            title: 'Erro de Leitura',
+            description: 'Não foi possível ler o arquivo selecionado.',
+        });
+    }
+    reader.readAsText(file, 'latin1'); // Use 'latin1' to handle special characters
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Enviar Transações</CardTitle>
-        <CardDescription>Envie um arquivo CSV de seu extrato bancário. Atualmente otimizado para o formato do C6 Bank.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-accent" />
+            Importação Inteligente de Extratos
+        </CardTitle>
+        <CardDescription>Envie um arquivo CSV de qualquer banco. Nossa IA irá analisar e importar suas transações automaticamente.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2">
           <Input id="csv-upload" type="file" accept=".csv" onChange={handleFileChange} disabled={isParsing} />
           <Button onClick={handleUpload} disabled={!file || isParsing}>
             <Upload className="mr-2 h-4 w-4" />
-            {isParsing ? 'Enviando...' : 'Enviar'}
+            {isParsing ? 'Analisando...' : 'Enviar'}
           </Button>
         </div>
       </CardContent>
