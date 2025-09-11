@@ -76,7 +76,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             description: 'Não foi possível ler o arquivo selecionado.',
         });
     }
-    reader.readAsText(file, 'latin1'); // Use 'latin1' to handle special characters
+    reader.readAsText(file, 'UTF-8'); // Use 'UTF-8' to handle special characters correctly
   };
 
   return (
