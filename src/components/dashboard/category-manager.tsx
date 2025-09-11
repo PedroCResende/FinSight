@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { addCategory, updateCategory, deleteCategory } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAchievements } from '@/contexts/achievements-context';
 
 interface CategoryManagerProps {
   categories: Category[];
@@ -43,6 +44,7 @@ const PRESET_COLORS = [
 export function CategoryManager({ categories, setCategories }: CategoryManagerProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { checkAndUnlockAchievement } = useAchievements();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Partial<Category> | null>(null);
   const [categoryName, setCategoryName] = useState('');
@@ -117,6 +119,7 @@ export function CategoryManager({ categories, setCategories }: CategoryManagerPr
                 icon: selectedIconInfo.icon,
             };
             setCategories([...categories, newCategory]);
+            checkAndUnlockAchievement('firstCategoryCreated');
             toast({ title: 'Sucesso', description: 'Categoria criada.' });
         }
         setIsDialogOpen(false);

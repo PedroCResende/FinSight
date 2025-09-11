@@ -11,7 +11,6 @@ import { CategoryManager } from '@/components/dashboard/category-manager';
 import { TransactionUploader } from '@/components/dashboard/transaction-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 import type { DateRange } from 'react-day-picker';
 import { subDays } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
@@ -43,15 +42,17 @@ import { useAuth } from '@/contexts/auth-context';
 import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransaction } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
+import { useAchievements } from '@/contexts/achievements-context';
+import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
 
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { unlockedAchievements, checkAndUnlockAchievement } = useAchievements();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState('standard');

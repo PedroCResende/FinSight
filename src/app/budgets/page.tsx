@@ -22,19 +22,20 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
-import type { Budget, Category, Transaction, UserAchievement } from '@/lib/types';
+import type { Budget, Category } from '@/lib/types';
 import { format } from 'date-fns';
 import { BudgetCard } from '@/components/dashboard/budget-card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
-import { getBudgets, addBudget, updateBudget, deleteBudget, getCategories, getTransactions } from '@/services/firestore';
+import { getBudgets, addBudget, updateBudget, deleteBudget, getCategories } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
-import { MOCK_USER_ACHIEVEMENTS, ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
+import { useAchievements } from '@/contexts/achievements-context';
 
 
 export default function BudgetsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { checkAndUnlockAchievement } = useAchievements();
   
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,8 +44,6 @@ export default function BudgetsPage() {
   const [currentBudget, setCurrentBudget] = useState<Partial<Budget> | null>(null);
   const [limit, setLimit] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  
-  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
   
   useEffect(() => {
     if (user) {
@@ -71,18 +70,6 @@ export default function BudgetsPage() {
     return budgets.filter(budget => budget.month === currentMonth);
   }, [budgets]);
   
-  const checkAchievement = (achievementId: string) => {
-    if (!unlockedAchievements.some(a => a.achievementId === achievementId)) {
-      setUnlockedAchievements(prev => [...prev, { achievementId: achievementId, unlockedAt: new Date() }]);
-      const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
-      if (achievement) {
-        toast({
-          title: '🏆 Conquista Desbloqueada!',
-          description: `Você ganhou: "${achievement.title}"`,
-        });
-      }
-    }
-  };
 
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || 'Desconhecida';
@@ -143,7 +130,7 @@ export default function BudgetsPage() {
           };
           const newId = await addBudget(user.uid, newBudgetData);
           setBudgets([...budgets, { id: newId, ...newBudgetData }]);
-          checkAchievement('ach_8'); // "Planejador" achievement
+          checkAndUnlockAchievement('firstBudgetCreated');
           toast({ title: 'Sucesso', description: 'Orçamento criado.' });
         }
         setIsDialogOpen(false);
