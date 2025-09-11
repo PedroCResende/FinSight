@@ -48,23 +48,41 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         }
 
         const transactions: Omit<Transaction, 'id' | 'category'>[] = dataLines.map((line, index) => {
-            // Lida com descrições que podem conter vírgulas, uma limitação comum de split(',')
-            const values = line.split(',');
-            if (values.length < 3) {
+            const sanitizedLine = line.trim();
+            if (!sanitizedLine) {
+                // Should be filtered out, but as a safeguard
+                throw new Error(`Linha vazia encontrada na posição ${index + 2}.`);
+            }
+
+            const firstCommaIndex = sanitizedLine.indexOf(',');
+            const lastCommaIndex = sanitizedLine.lastIndexOf(',');
+
+            if (firstCommaIndex === -1 || lastCommaIndex === -1 || firstCommaIndex === lastCommaIndex) {
                  throw new Error(`A linha ${index + 2} parece estar mal formatada. Verifique o número de colunas.`);
             }
             
-            // Assumimos a ordem: Data, Descrição, Valor
-            const date = values[0].trim();
-            const amount = parseFloat(values[values.length - 1].trim()); // Valor é sempre o último
-            const description = values.slice(1, -1).join(',').trim().replace(/"/g, ''); // O que sobrar é a descrição
+            const date = sanitizedLine.substring(0, firstCommaIndex).trim().replace(/"/g, '');
+            const description = sanitizedLine.substring(firstCommaIndex + 1, lastCommaIndex).trim().replace(/"/g, '');
+            const amountStr = sanitizedLine.substring(lastCommaIndex + 1).trim().replace(/"/g, '');
+            const amount = parseFloat(amountStr);
+
 
             if (!date || isNaN(amount) || !description) {
                  throw new Error(`Erro ao processar a linha ${index + 2}. Verifique se os dados de data, descrição e valor estão corretos.`);
             }
 
+            // Convert DD/MM/YYYY to YYYY-MM-DD
+            const dateParts = date.split('/');
+            let formattedDate = date;
+            if (dateParts.length === 3) {
+                 const [day, month, year] = dateParts;
+                 if (day.length === 2 && month.length === 2 && year.length === 4) {
+                    formattedDate = `${year}-${month}-${day}`;
+                 }
+            }
+
             return {
-              date: date,
+              date: formattedDate,
               description: description,
               amount: amount,
             };
