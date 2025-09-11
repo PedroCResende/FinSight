@@ -23,14 +23,6 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     }
   };
 
-  const parseCsvLine = (line: string): string[] => {
-    // Regex to split by comma but ignore commas inside quotes
-    const regex = /(".*?"|[^",]+)(?=\s*,|\s*$)/g;
-    const matches = line.match(regex) || [];
-    return matches.map(field => field.replace(/"/g, '').trim());
-  };
-
-
   const handleUpload = () => {
     if (!file) {
       toast({
@@ -46,31 +38,42 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     reader.onload = (e) => {
       const content = e.target?.result as string;
       try {
-        const lines = content.split('\n');
+        const lines = content.split('\n').filter(line => line.trim() !== '');
+
+        // Encontrar o índice da linha do cabeçalho real
+        const headerIndex = lines.findIndex(line => line.startsWith('Data Lançamento'));
         
-        // Remove o cabeçalho e filtra linhas vazias
-        const dataLines = lines.slice(1).filter(line => line.trim() !== '');
+        if (headerIndex === -1) {
+            throw new Error("Cabeçalho 'Data Lançamento,Data Contábil,Título,Descrição,Entrada(R$),Saída(R$),Saldo do Dia(R$)' não encontrado. O arquivo parece não ser um extrato válido do C6 Bank.");
+        }
+
+        // Pegar apenas as linhas de dados, pulando os cabeçalhos e informações do banco
+        const dataLines = lines.slice(headerIndex + 1);
 
         if (dataLines.length === 0) {
-          throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
+          throw new Error("O arquivo CSV não contém nenhuma linha de dados após o cabeçalho.");
         }
 
         const transactions: Omit<Transaction, 'id' | 'category'>[] = dataLines.map((line, index) => {
-            const columns = parseCsvLine(line);
+            const columns = line.split(',');
 
-            if (columns.length < 3) {
-                 throw new Error(`A linha ${index + 2} está mal formatada ou incompleta. Verifique se ela possui 3 colunas: Data, Descrição e Valor.`);
+            if (columns.length < 7) {
+                 throw new Error(`A linha ${headerIndex + index + 2} está mal formatada. Esperava 7 colunas, mas encontrei ${columns.length}.`);
             }
             
-            // Assume a ordem: Data, Descrição, Valor
-            const [date, description, amountStr, ..._rest] = columns;
-            const amount = parseFloat(amountStr.replace(',', '.')); // Replace comma with dot for decimals
+            // Colunas esperadas: Data Lançamento, Data Contábil, Título, Descrição, Entrada(R$), Saída(R$), Saldo do Dia(R$)
+            const [date, _date2, title, _description, entryStr, exitStr, ..._rest] = columns;
+            
+            const entryValue = parseFloat(entryStr.replace(',', '.')) || 0;
+            const exitValue = parseFloat(exitStr.replace(',', '.')) || 0;
 
-            if (!date || isNaN(amount) || !description) {
-                 throw new Error(`Erro ao processar a linha ${index + 2}. Verifique se os dados de data, descrição e valor estão corretos e não estão em branco.`);
+            const amount = entryValue > 0 ? entryValue : -Math.abs(exitValue);
+            
+            if (!date || isNaN(amount) || !title) {
+                 throw new Error(`Erro ao processar a linha ${headerIndex + index + 2}. Verifique se os dados de data, título e valores estão corretos.`);
             }
 
-            // Convert DD/MM/YYYY to YYYY-MM-DD
+            // Converter DD/MM/YYYY para YYYY-MM-DD
             const dateParts = date.split('/');
             let formattedDate = date;
             if (dateParts.length === 3) {
@@ -82,7 +85,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
 
             return {
               date: formattedDate,
-              description: description,
+              description: title,
               amount: amount,
             };
           });
@@ -103,14 +106,14 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         if(fileInput) fileInput.value = '';
       }
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'latin1'); // Use 'latin1' para lidar com caracteres especiais comuns em extratos brasileiros
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Enviar Transações</CardTitle>
-        <CardDescription>Envie um arquivo CSV. As colunas devem estar na ordem: Data, Descrição, Valor.</CardDescription>
+        <CardDescription>Envie um arquivo CSV de seu extrato bancário. Atualmente otimizado para o formato do C6 Bank.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2">
