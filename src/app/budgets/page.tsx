@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
@@ -165,7 +164,7 @@ export default function BudgetsPage() {
          <Card>
             <CardHeader>
                 <CardTitle>Orçamentos do Mês</CardTitle>
-                <CardDescription>Acompanhe seus limites de gastos para o mês atual.</CardDescription>
+                <CardDescription>Acompanhe seus limites de gastos para o mês <span className="font-bold text-primary">ATUAL</span>.</CardDescription>
             </CardHeader>
             <CardContent>
                 {activeBudgets.length > 0 ? (
