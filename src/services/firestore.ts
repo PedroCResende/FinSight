@@ -115,6 +115,23 @@ export async function updateTransaction(userId: string, transactionId: string, t
     await updateDoc(transactionDoc, transactionData);
 }
 
+export async function deleteAllTransactions(userId: string): Promise<void> {
+    const transactionsRef = collection(db, `users/${userId}/transactions`);
+    const querySnapshot = await getDocs(transactionsRef);
+    
+    if (querySnapshot.empty) {
+        return;
+    }
+    
+    const batch = writeBatch(db);
+    querySnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+}
+
+
 // --- GOALS ---
 export async function getGoals(userId: string): Promise<Goal[]> {
     const goalsRef = collection(db, `users/${userId}/goals`);
