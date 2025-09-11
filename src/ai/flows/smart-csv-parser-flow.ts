@@ -10,8 +10,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-// The input is the raw string content of the CSV file.
-export type ParseBankStatementCsvInput = string;
+const ParseBankStatementCsvInputSchema = z.object({
+  csvContent: z.string().describe('The raw string content of the CSV file.'),
+  bank: z.string().describe('The name of the bank the CSV is from. e.g., "Nubank", "Itau", "Bradesco".'),
+});
+export type ParseBankStatementCsvInput = z.infer<typeof ParseBankStatementCsvInputSchema>;
+
 
 const ParsedTransactionSchema = z.object({
     date: z.string().describe('The date of the transaction, exactly as it appears in the source file.'),
@@ -33,38 +37,42 @@ export async function parseBankStatementCsv(
 
 const prompt = ai.definePrompt({
   name: 'parseBankStatementCsvPrompt',
-  input: { schema: z.string() },
+  input: { schema: ParseBankStatementCsvInputSchema },
   output: { schema: ParseBankStatementCsvOutputSchema },
-  prompt: `You are an expert financial data analyst. Your task is to parse the text from a bank statement CSV file and convert it into a structured JSON format.
+  prompt: `You are an expert financial data analyst. Your task is to parse the text from a bank statement CSV file for a specific bank and convert it into a structured JSON format.
+
+The CSV is from the bank: {{{bank}}}
 
 Here is the raw CSV content:
-{{input}}
+{{{csvContent}}}
 
 Follow these instructions carefully:
 1.  **Identify Transactions:** Scan the file and identify the rows that represent actual financial transactions. Ignore any header rows, summary lines, or empty lines.
 2.  **Extract Key Information:** For each transaction row, extract the following three fields:
-    *   **Date:** Find the transaction date. Extract the date text exactly as it appears, do not reformat it.
-    *   **Description:** Extract the most meaningful description of the transaction. This might be in a column named 'Description', 'Título', 'Histórico', or similar. Choose the most informative text available.
+    *   **Date:** Find the transaction date. Extract the date text exactly as it appears, do not reformat it. The column might be named 'Data', 'Date', etc.
+    *   **Description:** Extract the most meaningful description of the transaction. This might be in a column named 'Descrição', 'Description', 'Título', 'Histórico', or similar. Choose the most informative text available.
     *   **Amount:** Determine the transaction value.
         *   If there are separate 'Entrada' (Income) and 'Saída' (Expense) columns, combine them. The amount should be **positive** for income and **negative** for expenses.
         *   If there's a single amount column, determine if it's an expense or income based on a sign (+/-) or context, and format it as a number.
         *   Ensure the final amount is a number (float), not a string. Convert comma decimal separators (e.g., "1.234,56") to dot decimal separators (e.g., 1234.56).
 3.  **Format Output:** Return a JSON object containing a single key "transactions", which is an array of the transaction objects you extracted.
 
-Do not include any transactions that are not clearly identifiable from the data.
+Do not include any transactions that are not clearly identifiable from the data. If you cannot find any transactions, return an empty "transactions" array.
 `,
 });
 
 const parseBankStatementCsvFlow = ai.defineFlow(
   {
     name: 'parseBankStatementCsvFlow',
-    inputSchema: z.string(),
+    inputSchema: ParseBankStatementCsvInputSchema,
     outputSchema: ParseBankStatementCsvOutputSchema,
   },
   async (input) => {
     const { output } = await prompt(input);
     if (!output?.transactions) {
-      throw new Error('AI failed to parse transactions from the CSV content.');
+      // This can happen if the AI returns a perfectly valid but empty response.
+      // We'll return an empty array to prevent an error downstream.
+      return { transactions: [] };
     }
     return output;
   }

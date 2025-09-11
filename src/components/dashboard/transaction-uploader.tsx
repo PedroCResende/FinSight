@@ -6,16 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { Upload, Sparkles, Loader2 } from 'lucide-react';
+import { Upload, Sparkles, Loader2, Banknote } from 'lucide-react';
 import { parseBankStatementCsv } from '@/ai/flows/smart-csv-parser-flow.ts';
 import { format, parse } from 'date-fns';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TransactionUploaderProps {
   onUpload: (transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]) => void;
 }
 
+const SUPPORTED_BANKS = ["Nubank", "Itaú", "Bradesco", "Banco do Brasil", "Santander", "Caixa", "Inter", "Outro"];
+
 export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
   const [isParsing, setIsParsing] = useState(false);
+  const [selectedBank, setSelectedBank] = useState<string>('');
   const [fileInputKey, setFileInputKey] = useState(Date.now()); // Key to reset the file input
   const { toast } = useToast();
 
@@ -54,10 +64,13 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
     reader.onload = async (event) => {
       const content = event.target?.result as string;
       try {
-        const result = await parseBankStatementCsv(content);
+        const result = await parseBankStatementCsv({
+            csvContent: content,
+            bank: selectedBank,
+        });
         
         if (!result.transactions || result.transactions.length === 0) {
-            throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o arquivo é um extrato CSV válido.");
+            throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o banco selecionado está correto e se o arquivo é um extrato CSV válido.");
         }
 
         const sanitizedTransactions = result.transactions.map(tx => ({
@@ -105,11 +118,27 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             <Sparkles className="h-5 w-5 text-accent" />
             Importação Inteligente de Extratos
         </CardTitle>
-        <CardDescription>Envie um arquivo CSV de qualquer banco. Nossa IA irá analisar e importar suas transações automaticamente.</CardDescription>
+        <CardDescription>Selecione seu banco e envie um arquivo CSV. Nossa IA irá analisar e importar suas transações automaticamente.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex w-full items-center space-x-2">
-           <Button asChild variant="outline" className="w-full justify-start text-muted-foreground">
+        <div className="flex flex-col sm:flex-row w-full items-center space-y-2 sm:space-y-0 sm:space-x-2">
+           <Select value={selectedBank} onValueChange={setSelectedBank}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="1. Selecione o banco" />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_BANKS.map((bank) => (
+                  <SelectItem key={bank} value={bank}>
+                    <div className="flex items-center gap-2">
+                        <Banknote className="h-4 w-4" />
+                        {bank}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+           <Button asChild variant="outline" className="w-full flex-1 justify-start text-muted-foreground" disabled={!selectedBank || isParsing}>
              <label htmlFor="csv-upload" className="cursor-pointer">
                 {isParsing ? (
                     <>
@@ -119,7 +148,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
                 ) : (
                     <>
                         <Upload className="mr-2 h-4 w-4" />
-                        <span>{isParsing ? 'Analisando...' : 'Selecione o extrato CSV...'}</span>
+                        <span>{isParsing ? 'Analisando...' : '2. Selecione o extrato CSV...'}</span>
                     </>
                 )}
              </label>
@@ -130,7 +159,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
                 type="file"
                 accept=".csv"
                 onChange={handleFileChangeAndUpload}
-                disabled={isParsing}
+                disabled={!selectedBank || isParsing}
                 className="hidden"
             />
         </div>
