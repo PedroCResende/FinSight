@@ -9,13 +9,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { Transaction } from '@/lib/types';
 
 // The input is the raw string content of the CSV file.
 export type ParseBankStatementCsvInput = string;
 
 const ParsedTransactionSchema = z.object({
-    date: z.string().describe('The date of the transaction in YYYY-MM-DD format.'),
+    date: z.string().describe('The date of the transaction, exactly as it appears in the source file.'),
     description: z.string().describe('The most relevant description for the transaction.'),
     amount: z.number().describe('The transaction amount. Negative for expenses, positive for income.'),
 });
@@ -46,7 +45,7 @@ Here is the raw CSV content:
 Follow these instructions carefully:
 1.  **Identify Transactions:** Scan the file and identify the rows that represent actual financial transactions. Ignore any header rows, summary lines, or empty lines.
 2.  **Extract Key Information:** For each transaction row, extract the following three fields:
-    *   **Date:** Find the transaction date and convert it to 'YYYY-MM-DD' format. The original format might be 'DD/MM/YYYY' or something else.
+    *   **Date:** Find the transaction date. Extract the date text exactly as it appears, do not reformat it.
     *   **Description:** Extract the most meaningful description of the transaction. This might be in a column named 'Description', 'Título', 'Histórico', or similar. Choose the most informative text available.
     *   **Amount:** Determine the transaction value.
         *   If there are separate 'Entrada' (Income) and 'Saída' (Expense) columns, combine them. The amount should be **positive** for income and **negative** for expenses.

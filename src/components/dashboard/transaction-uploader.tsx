@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
 import { Upload, Sparkles } from 'lucide-react';
-import { parseBankStatementCsv } from '@/ai/flows/smart-csv-parser-flow';
+import { parseBankStatementCsv } from '@/ai/flows/smart-csv-parser-flow.ts';
+import { format, parse } from 'date-fns';
 
 interface TransactionUploaderProps {
   onUpload: (transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]) => void;
@@ -23,6 +24,30 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
       setFile(e.target.files[0]);
     }
   };
+
+  const sanitizeAndFormatDate = (dateString: string): string => {
+    // Attempt to parse common date formats
+    try {
+        // Handle DD/MM/YYYY, DD-MM-YYYY, etc.
+        if (dateString.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}$/)) {
+            return format(parse(dateString, 'dd/MM/yyyy', new Date()), 'yyyy-MM-dd');
+        }
+        // Handle YYYY-MM-DD, YYYY/MM/DD which is already valid but good to normalize
+        if (dateString.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}$/)) {
+             return format(new Date(dateString.replace(/\//g, '-')), 'yyyy-MM-dd');
+        }
+        // Add more formats as needed
+        
+        // If no format matches, return as is and hope for the best
+        console.warn(`Unrecognized date format: ${dateString}. Passing it through.`);
+        return dateString;
+    } catch(error) {
+        console.error(`Failed to parse date: ${dateString}`, error);
+        // Return original string if parsing fails
+        return dateString;
+    }
+  };
+
 
   const handleUpload = () => {
     if (!file) {
@@ -45,8 +70,13 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o arquivo é um extrato CSV válido.");
         }
 
+        const sanitizedTransactions = result.transactions.map(tx => ({
+            ...tx,
+            date: sanitizeAndFormatDate(tx.date)
+        }));
+
         // Generate a simple hash for deduplication
-        const transactionsWithHashes = result.transactions.map(tx => {
+        const transactionsWithHashes = sanitizedTransactions.map(tx => {
             const hash = `${tx.date}-${tx.description.trim()}-${tx.amount}`;
             return { ...tx, hash };
         });
@@ -76,7 +106,7 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
             description: 'Não foi possível ler o arquivo selecionado.',
         });
     }
-    reader.readAsText(file, 'UTF-8'); // Use 'UTF-8' to handle special characters correctly
+    reader.readAsText(file, 'UTF-8');
   };
 
   return (
