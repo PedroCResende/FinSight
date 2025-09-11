@@ -114,11 +114,10 @@ export default function DashboardPage() {
         await updateTransaction(user.uid, transactionId, { category: categoryId });
 
         // Optimistically update local state
-        setTransactions(
-            transactions.map((t) =>
-                t.id === transactionId ? { ...t, category: categoryId } : t
-            )
+        const updatedTransactions = transactions.map((t) =>
+            t.id === transactionId ? { ...t, category: categoryId } : t
         );
+        setTransactions(updatedTransactions);
 
         // Update the budget for the new category after successfully updating the transaction
         await updateBudgetOnTransactionChange(user.uid, categoryId, transactionToUpdate.date);
@@ -126,6 +125,14 @@ export default function DashboardPage() {
         // Also update budget for the old category if it existed
         if (transactionToUpdate.category) {
             await updateBudgetOnTransactionChange(user.uid, transactionToUpdate.category, transactionToUpdate.date);
+        }
+
+        // Check for achievements
+        checkAndUnlockAchievement('firstCategorization');
+        
+        const categorizedCount = updatedTransactions.filter(t => t.category).length;
+        if (categorizedCount >= 100) {
+            checkAndUnlockAchievement('categorized100Transactions');
         }
 
         toast({ title: 'Sucesso', description: 'Transação categorizada.' });
