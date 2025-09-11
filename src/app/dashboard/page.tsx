@@ -39,7 +39,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
-import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransactionsWithDeduplication } from '@/services/firestore';
+import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransactionsWithDeduplication, deleteTransaction } from '@/services/firestore';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useAchievements } from '@/contexts/achievements-context';
@@ -165,6 +165,30 @@ export default function DashboardPage() {
     );
     setContributionGoal(null);
     setContributionAmount('');
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!user) return;
+
+    const transactionToDelete = transactions.find(t => t.id === transactionId);
+    if (!transactionToDelete) return;
+    
+    try {
+        await deleteTransaction(user.uid, transactionId);
+
+        // Optimistic update
+        setTransactions(prev => prev.filter(t => t.id !== transactionId));
+
+        // Update budget if it was a categorized expense
+        if (transactionToDelete.category && transactionToDelete.amount < 0) {
+            await updateBudgetOnTransactionChange(user.uid, transactionToDelete.category, transactionToDelete.date);
+        }
+        
+        toast({ title: 'Sucesso', description: 'Transação deletada.' });
+    } catch (error) {
+        console.error("Error deleting transaction:", error);
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível deletar a transação.' });
+    }
   };
 
 
@@ -309,6 +333,7 @@ export default function DashboardPage() {
                 transactions={filteredTransactions}
                 categories={categories}
                 onUpdateTransactionCategory={updateTransactionCategory}
+                onDeleteTransaction={handleDeleteTransaction}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 categoryFilter={categoryFilter}

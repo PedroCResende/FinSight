@@ -18,16 +18,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Search, Download } from 'lucide-react';
+import { Sparkles, Search, Download, Trash2, Loader2 } from 'lucide-react';
 import type { Transaction, Category } from '@/lib/types';
 import { SmartCategoryDialog } from './smart-category-dialog';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TransactionListProps {
   transactions: Transaction[];
   categories: Category[];
   onUpdateTransactionCategory: (transactionId: string, categoryId: string) => void;
+  onDeleteTransaction: (transactionId: string) => Promise<void>;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   categoryFilter: string;
@@ -40,6 +51,7 @@ export function TransactionList({
   transactions,
   categories,
   onUpdateTransactionCategory,
+  onDeleteTransaction,
   searchTerm,
   setSearchTerm,
   categoryFilter,
@@ -47,7 +59,10 @@ export function TransactionList({
   dateRange,
   setDateRange,
 }: TransactionListProps) {
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransactionForDialog, setSelectedTransactionForDialog] = useState<Transaction | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   const getCategoryFromId = (id: string) => categories.find((c) => c.id === id);
 
@@ -101,6 +116,14 @@ export function TransactionList({
       document.body.removeChild(link);
     }
   }
+
+  const handleDeleteConfirm = async () => {
+    if (!transactionToDelete) return;
+    setIsDeleting(true);
+    await onDeleteTransaction(transactionToDelete.id);
+    setIsDeleting(false);
+    setTransactionToDelete(null);
+  };
 
 
   return (
@@ -210,16 +233,26 @@ export function TransactionList({
                           </Select>
                         </TableCell>
                         <TableCell className="text-center">
-                          {!category && transaction.amount < 0 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setSelectedTransaction(transaction)}
-                            >
-                              <Sparkles className="h-4 w-4 text-accent" />
-                              <span className="sr-only">Sugerir Categoria</span>
-                            </Button>
-                          )}
+                            <div className="flex justify-center items-center">
+                                {!category && transaction.amount < 0 && (
+                                    <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSelectedTransactionForDialog(transaction)}
+                                    >
+                                    <Sparkles className="h-4 w-4 text-accent" />
+                                    <span className="sr-only">Sugerir Categoria</span>
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setTransactionToDelete(transaction)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <span className="sr-only">Deletar Transação</span>
+                                </Button>
+                            </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -236,15 +269,32 @@ export function TransactionList({
           </div>
         </CardContent>
       </Card>
-      {selectedTransaction && (
+      {selectedTransactionForDialog && (
         <SmartCategoryDialog
-          transaction={selectedTransaction}
+          transaction={selectedTransactionForDialog}
           categories={categories}
-          open={!!selectedTransaction}
-          onOpenChange={() => setSelectedTransaction(null)}
+          open={!!selectedTransactionForDialog}
+          onOpenChange={() => setSelectedTransactionForDialog(null)}
           onCategorize={onUpdateTransactionCategory}
         />
       )}
+       <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. A transação será permanentemente deletada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting}>
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sim, deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

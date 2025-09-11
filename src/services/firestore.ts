@@ -115,6 +115,12 @@ export async function updateTransaction(userId: string, transactionId: string, t
     await updateDoc(transactionDoc, transactionData);
 }
 
+export async function deleteTransaction(userId: string, transactionId: string): Promise<void> {
+    const transactionDoc = doc(db, `users/${userId}/transactions`, transactionId);
+    await deleteDoc(transactionDoc);
+}
+
+
 export async function deleteAllTransactions(userId: string): Promise<void> {
     const transactionsRef = collection(db, `users/${userId}/transactions`);
     const querySnapshot = await getDocs(transactionsRef);
