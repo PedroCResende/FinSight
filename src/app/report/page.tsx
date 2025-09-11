@@ -37,31 +37,39 @@ export default function ReportPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const savedData = sessionStorage.getItem('reportData');
+    // This effect runs on the client-side
+    const savedData = localStorage.getItem('reportData');
+    
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
         
+        // Re-hydrate complex objects
         const categoriesWithIcons = parsedData.categories.map((c: any) => ({
             ...c,
-            icon: findIconComponent(c.icon as string)!,
+            icon: findIconComponent(c.icon as string)!, // Re-create icon component
         }));
 
         const goalsWithDates = parsedData.goals.map((g: any) => ({
             ...g,
-            deadline: new Date(g.deadline),
+            deadline: new Date(g.deadline), // Convert string back to Date object
             createdAt: g.createdAt ? new Date(g.createdAt) : undefined,
         }));
 
         setData({ ...parsedData, categories: categoriesWithIcons, goals: goalsWithDates });
         
+        // Trigger print dialog after a short delay to allow rendering
         setTimeout(() => window.print(), 1000);
       } catch (error) {
         console.error('Failed to parse report data:', error);
+      } finally {
+        // Clean up localStorage after use
+        localStorage.removeItem('reportData');
       }
     }
+    
     setLoading(false);
-  }, [router]);
+  }, []);
   
   const financialSummary = useMemo(() => {
       if (!data) return { income: 0, expenses: 0, balance: 0 };
@@ -252,5 +260,3 @@ export default function ReportPage() {
     </div>
   );
 }
-
-    
