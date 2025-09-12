@@ -89,3 +89,30 @@
         display: none;
     }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #report-content, #report-content * {
+    visibility: visible;
+  }
+  #report-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem; /* A bit of padding for print */
+  }
+  .print-footer {
+    display: block;
+  }
+  .no-print-in-report {
+    display: none;
+  }
+}
+@page {
+    size: A4;
+    margin: 0.5in;
+}

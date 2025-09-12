@@ -39,18 +39,16 @@ import {
 } from "@/components/ui/carousel"
 import { useAuth } from '@/contexts/auth-context';
 import { getCategories, getTransactions, getGoals, updateTransaction, updateBudgetOnTransactionChange, addTransactionsWithDeduplication, deleteTransaction } from '@/services/firestore';
-import { findIconComponent, findIconInfo } from '@/components/dashboard/icon-picker';
+import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useAchievements } from '@/contexts/achievements-context';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements-data';
-import { useRouter } from 'next/navigation';
 
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { unlockedAchievements, checkAndUnlockAchievement } = useAchievements();
-  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -212,36 +210,20 @@ export default function DashboardPage() {
   }, [goals]);
 
   const handleGenerateReport = () => {
-    // Prepare data for JSON serialization, converting complex objects to strings
-    const serializableCategories = categories.map(c => ({
-      ...c,
-      icon: findIconInfo(c.icon)?.name || 'Other', // Convert icon component to string name
-    }));
-
-    const serializableGoals = goals.map(g => ({
-        ...g,
-        deadline: g.deadline.toISOString(), // Convert Date object to string
-        createdAt: g.createdAt?.toISOString(),
-    }));
-
-    const reportData = {
-      transactions: filteredTransactions,
-      categories: serializableCategories,
-      goals: serializableGoals,
-      dateRange,
-      generatedAt: new Date().toISOString(),
-    };
-    
-    try {
-      // Use sessionStorage for this hop, as it's cleaner.
-      const reportDataString = JSON.stringify(reportData);
-      sessionStorage.setItem('reportDataForGenerate', reportDataString);
-      router.push('/report/generate');
-      
-    } catch (error) {
-      console.error('Failed to prepare report data:', error);
-      toast({ variant: 'destructive', title: 'Erro ao gerar relatório', description: 'Não foi possível preparar os dados do relatório. Tente novamente.' });
+    if (!dateRange || !dateRange.from) {
+      toast({
+        variant: 'destructive',
+        title: 'Período Inválido',
+        description: 'Por favor, selecione um período de datas para gerar o relatório.',
+      });
+      return;
     }
+
+    const from = dateRange.from.toISOString();
+    const to = dateRange.to ? dateRange.to.toISOString() : from;
+
+    const reportUrl = `/report?from=${from}&to=${to}`;
+    window.open(reportUrl, '_blank');
   };
 
 
@@ -416,5 +398,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

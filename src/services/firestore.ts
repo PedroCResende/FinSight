@@ -65,6 +65,18 @@ export async function getTransactions(userId: string): Promise<Transaction[]> {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Transaction));
 }
 
+export async function getTransactionsByDateRange(userId: string, from: Date, to: Date): Promise<Transaction[]> {
+    const transactionsRef = collection(db, `users/${userId}/transactions`);
+    const q = query(
+        transactionsRef,
+        where('date', '>=', format(from, 'yyyy-MM-dd')),
+        where('date', '<=', format(to, 'yyyy-MM-dd'))
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamp(doc.data()) } as Transaction));
+}
+
+
 export async function addTransactionsWithDeduplication(
   userId: string,
   transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]

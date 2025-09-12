@@ -1,8 +1,8 @@
-
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import type { Transaction, Category, Goal } from '@/lib/types';
 import type { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
@@ -20,8 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
-import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
+import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getTransactionsByDateRange, getCategories, getGoals } from '@/services/firestore';
 
 interface ReportData {
   transactions: Transaction[];
@@ -31,75 +32,105 @@ interface ReportData {
   generatedAt: string;
 }
 
-export default function ReportPage() {
-  const [data, setData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
+function ReportPageContent() {
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [data, setData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    // This effect runs on the client-side after the component mounts.
-    const savedData = localStorage.getItem('reportData');
-    
-    if (savedData) {
+    if (!user) return;
+
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+
+    if (!from || !to) {
+      setError('Período de datas inválido. Por favor, gere o relatório novamente a partir do dashboard.');
+      setLoading(false);
+      return;
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const fetchData = async () => {
       try {
-        const parsedData = JSON.parse(savedData);
-        
-        // Re-hydrate complex objects from their string representations
-        const categoriesWithIcons = parsedData.categories.map((c: any) => ({
-            ...c,
-            icon: findIconComponent(c.icon as string)!, // Re-create icon component from name
+        setLoading(true);
+        const [transactions, categories, goals] = await Promise.all([
+          getTransactionsByDateRange(user.uid, fromDate, toDate),
+          getCategories(user.uid),
+          getGoals(user.uid),
+        ]);
+
+        const categoriesWithIcons = categories.map((c: any) => ({
+          ...c,
+          icon: findIconComponent(c.icon as string)!,
         }));
 
-        const goalsWithDates = parsedData.goals.map((g: any) => ({
-            ...g,
-            deadline: new Date(g.deadline), // Convert ISO string back to Date object
-            createdAt: g.createdAt ? new Date(g.createdAt) : undefined,
-        }));
-        
-        // Re-hydrate date range objects
-        const dateRangeWithDates = parsedData.dateRange ? {
-            from: parsedData.dateRange.from ? new Date(parsedData.dateRange.from) : undefined,
-            to: parsedData.dateRange.to ? new Date(parsedData.dateRange.to) : undefined,
-        } : undefined;
+        setData({
+          transactions,
+          categories: categoriesWithIcons,
+          goals,
+          dateRange: { from: fromDate, to: toDate },
+          generatedAt: new Date().toISOString(),
+        });
 
-        setData({ ...parsedData, categories: categoriesWithIcons, goals: goalsWithDates, dateRange: dateRangeWithDates });
-        
         // Trigger print dialog after a short delay to allow the page to fully render.
         setTimeout(() => window.print(), 1000);
 
-      } catch (error) {
-        console.error('Failed to parse or process report data:', error);
+      } catch (err) {
+        console.error('Failed to fetch report data:', err);
+        setError('Ocorreu um erro ao buscar os dados para o relatório. Tente novamente.');
       } finally {
-        // Clean up localStorage after use to avoid leaving sensitive data.
-        localStorage.removeItem('reportData');
+        setLoading(false);
       }
-    }
-    
-    setLoading(false);
-  }, []);
-  
+    };
+
+    fetchData();
+  }, [user, searchParams]);
+
   const financialSummary = useMemo(() => {
-      if (!data) return { income: 0, expenses: 0, balance: 0 };
-      const income = data.transactions.filter(t => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
-      const expenses = data.transactions.filter(t => t.amount < 0).reduce((acc, t) => acc + t.amount, 0);
-      const balance = income + expenses;
-      return { income, expenses: Math.abs(expenses), balance };
+    if (!data) return { income: 0, expenses: 0, balance: 0 };
+    const income = data.transactions.filter(t => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
+    const expenses = data.transactions.filter(t => t.amount < 0).reduce((acc, t) => acc + t.amount, 0);
+    const balance = income + expenses;
+    return { income, expenses: Math.abs(expenses), balance };
   }, [data]);
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
-  
+
   const formatDate = (date: Date) => {
-      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   }
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Carregando relatório...</div>;
+    return (
+      <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background p-4 text-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h1 className="text-2xl font-semibold mb-2">Carregando dados do relatório...</h1>
+        <p className="text-muted-foreground">Isso pode levar alguns segundos.</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen text-center p-4">
+        <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
+        <h1 className="text-2xl font-bold mb-2">Erro ao Gerar Relatório</h1>
+        <p className="text-muted-foreground">{error}</p>
+        <Button onClick={() => router.push('/dashboard')} className="mt-4">Voltar para o Dashboard</Button>
+      </div>
+    );
   }
 
   if (!data) {
-    return (
+     return (
       <div className="flex flex-col justify-center items-center h-screen text-center p-4">
         <PiggyBank className="h-16 w-16 mb-4 text-muted-foreground" />
         <h1 className="text-2xl font-bold mb-2">Nenhum dado para o relatório</h1>
@@ -110,7 +141,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen p-4 sm:p-6 md:p-8 report-container">
+    <div id="report-content" className="bg-background text-foreground min-h-screen p-4 sm:p-6 md:p-8 report-container">
       <header className="mb-8">
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -216,19 +247,23 @@ export default function ReportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.transactions.map((t) => {
+                {data.transactions.length > 0 ? data.transactions.map((t) => {
                   const category = data.categories.find(c => c.id === t.category);
                   return (
                     <TableRow key={t.id}>
                       <TableCell>{format(new Date(t.date.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
                       <TableCell>{t.description}</TableCell>
                       <TableCell>{category?.name || 'N/A'}</TableCell>
-                      <TableCell className={`text-right font-medium ${t.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <TableCell className={`text-right font-medium ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
                         {formatCurrency(t.amount)}
                       </TableCell>
                     </TableRow>
                   );
-                })}
+                }) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">Nenhuma transação neste período.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -238,34 +273,14 @@ export default function ReportPage() {
        <footer className="mt-8 text-center text-xs text-muted-foreground print-footer">
             Relatório gerado por FinSight.
        </footer>
-
-       <style jsx global>{`
-            @media print {
-                body {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                .report-container {
-                    padding: 0;
-                }
-                header, footer.print-footer {
-                    display: block;
-                }
-                .no-print {
-                    display: none;
-                }
-                main .card {
-                    border: 1px solid #e2e8f0; /* Softer border for print */
-                    box-shadow: none;
-                }
-            }
-            @page {
-                size: A4;
-                margin: 0.75in;
-            }
-       `}</style>
     </div>
   );
 }
 
-    
+export default function ReportPage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <ReportPageContent />
+        </Suspense>
+    )
+}
