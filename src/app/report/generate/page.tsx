@@ -8,26 +8,31 @@ export default function GenerateReportPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // This effect runs on the client-side after the page loads.
     const reportDataString = sessionStorage.getItem('reportDataForGenerate');
     
     if (reportDataString) {
-      // Move from sessionStorage to localStorage
+      // Data found. Move it from session to local storage.
+      // localStorage is shared across tabs, sessionStorage is not.
       localStorage.setItem('reportData', reportDataString);
       sessionStorage.removeItem('reportDataForGenerate');
 
-      // Open the report page and then go back
+      // Open the final report page in a new tab.
       const reportWindow = window.open('/report', '_blank');
+      
       if (reportWindow) {
-        // Allow time for the new tab to open and read from localStorage
+        // If the window opened successfully, go back to the dashboard.
+        // A small delay can help ensure the new tab is fully initialized.
         setTimeout(() => {
             router.back();
         }, 500);
       } else {
+        // If a popup blocker prevented the window from opening, alert the user.
         alert('Por favor, habilite pop-ups para gerar o relatório.');
         router.back();
       }
     } else {
-      // No data found, go back to dashboard
+      // If this page is loaded directly without data, go back to the dashboard.
       router.replace('/dashboard');
     }
   }, [router]);
@@ -40,3 +45,5 @@ export default function GenerateReportPage() {
     </div>
   );
 }
+
+    

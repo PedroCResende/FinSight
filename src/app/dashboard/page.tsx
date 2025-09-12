@@ -212,22 +212,28 @@ export default function DashboardPage() {
   }, [goals]);
 
   const handleGenerateReport = () => {
-    // Prepare data for JSON serialization
+    // Prepare data for JSON serialization, converting complex objects to strings
     const serializableCategories = categories.map(c => ({
       ...c,
       icon: findIconInfo(c.icon)?.name || 'Other', // Convert icon component to string name
     }));
 
+    const serializableGoals = goals.map(g => ({
+        ...g,
+        deadline: g.deadline.toISOString(), // Convert Date object to string
+        createdAt: g.createdAt?.toISOString(),
+    }));
+
     const reportData = {
       transactions: filteredTransactions,
       categories: serializableCategories,
-      goals: goals,
+      goals: serializableGoals,
       dateRange,
       generatedAt: new Date().toISOString(),
     };
     
     try {
-      // Use router to navigate and pass data via state
+      // Use sessionStorage for this hop, as it's cleaner.
       const reportDataString = JSON.stringify(reportData);
       sessionStorage.setItem('reportDataForGenerate', reportDataString);
       router.push('/report/generate');
@@ -410,3 +416,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

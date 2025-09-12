@@ -37,33 +37,40 @@ export default function ReportPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // This effect runs on the client-side
+    // This effect runs on the client-side after the component mounts.
     const savedData = localStorage.getItem('reportData');
     
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
         
-        // Re-hydrate complex objects
+        // Re-hydrate complex objects from their string representations
         const categoriesWithIcons = parsedData.categories.map((c: any) => ({
             ...c,
-            icon: findIconComponent(c.icon as string)!, // Re-create icon component
+            icon: findIconComponent(c.icon as string)!, // Re-create icon component from name
         }));
 
         const goalsWithDates = parsedData.goals.map((g: any) => ({
             ...g,
-            deadline: new Date(g.deadline), // Convert string back to Date object
+            deadline: new Date(g.deadline), // Convert ISO string back to Date object
             createdAt: g.createdAt ? new Date(g.createdAt) : undefined,
         }));
-
-        setData({ ...parsedData, categories: categoriesWithIcons, goals: goalsWithDates });
         
-        // Trigger print dialog after a short delay to allow rendering
+        // Re-hydrate date range objects
+        const dateRangeWithDates = parsedData.dateRange ? {
+            from: parsedData.dateRange.from ? new Date(parsedData.dateRange.from) : undefined,
+            to: parsedData.dateRange.to ? new Date(parsedData.dateRange.to) : undefined,
+        } : undefined;
+
+        setData({ ...parsedData, categories: categoriesWithIcons, goals: goalsWithDates, dateRange: dateRangeWithDates });
+        
+        // Trigger print dialog after a short delay to allow the page to fully render.
         setTimeout(() => window.print(), 1000);
+
       } catch (error) {
-        console.error('Failed to parse report data:', error);
+        console.error('Failed to parse or process report data:', error);
       } finally {
-        // Clean up localStorage after use
+        // Clean up localStorage after use to avoid leaving sensitive data.
         localStorage.removeItem('reportData');
       }
     }
@@ -116,7 +123,7 @@ export default function ReportPage() {
             <div className="text-right">
                 <h2 className="font-semibold">Período do Relatório</h2>
                 <p className="text-muted-foreground">
-                {data.dateRange?.from ? formatDate(new Date(data.dateRange.from)) : 'Início'} à {data.dateRange?.to ? formatDate(new Date(data.dateRange.to)) : 'Fim'}
+                {data.dateRange?.from ? formatDate(data.dateRange.from) : 'Início'} à {data.dateRange?.to ? formatDate(data.dateRange.to) : 'Fim'}
                 </p>
             </div>
         </div>
@@ -260,3 +267,5 @@ export default function ReportPage() {
     </div>
   );
 }
+
+    
