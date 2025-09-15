@@ -11,7 +11,7 @@ import { TransactionUploader } from '@/components/dashboard/transaction-uploader
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { DateRange } from 'react-day-picker';
-import { subDays } from 'date-fns';
+import { subDays, formatISO } from 'date-fns';
 import { AchievementsDisplay } from '@/components/dashboard/achievements-display';
 import { TimelineView } from '@/components/dashboard/timeline-view';
 import { HeatmapView } from '@/components/dashboard/heatmap-view';
@@ -219,8 +219,8 @@ export default function DashboardPage() {
       return;
     }
 
-    const from = dateRange.from.toISOString();
-    const to = dateRange.to ? dateRange.to.toISOString() : from;
+    const from = formatISO(dateRange.from, { representation: 'date' });
+    const to = dateRange.to ? formatISO(dateRange.to, { representation: 'date' }) : from;
 
     const reportUrl = `/report?from=${from}&to=${to}`;
     window.open(reportUrl, '_blank');

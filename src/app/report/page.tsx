@@ -4,8 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { Transaction, Category, Goal } from '@/lib/types';
-import type { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -28,11 +27,11 @@ interface ReportData {
   transactions: Transaction[];
   categories: Category[];
   goals: Goal[];
-  dateRange?: DateRange;
+  dateRange: { from: Date, to: Date };
   generatedAt: string;
 }
 
-function ReportPageContent() {
+function ReportPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -42,27 +41,34 @@ function ReportPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    // A. Garantir que temos o usuário antes de fazer qualquer coisa
+    if (!user) {
+      // Se não houver usuário, não faz sentido continuar.
+      // O AuthContext ainda pode estar carregando, ou o usuário não está logado.
+      return;
+    }
 
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
 
-    if (!from || !to) {
+    // B. Garantir que temos os parâmetros
+    if (!fromParam || !toParam) {
       setError('Período de datas inválido. Por favor, gere o relatório novamente a partir do dashboard.');
       setLoading(false);
       return;
     }
 
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
+    const fromDate = parseISO(fromParam);
+    const toDate = parseISO(toParam);
 
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Use Promise.all para buscar tudo em paralelo
         const [transactions, categories, goals] = await Promise.all([
           getTransactionsByDateRange(user.uid, fromDate, toDate),
           getCategories(user.uid),
-          getGoals(user.uid),
+          getGoals(user.uid), // A função getGoals busca todas, o filtro pode ser feito no cliente se necessário
         ]);
 
         const categoriesWithIcons = categories.map((c: any) => ({
@@ -70,27 +76,31 @@ function ReportPageContent() {
           icon: findIconComponent(c.icon as string)!,
         }));
 
-        setData({
+        const reportData: ReportData = {
           transactions,
           categories: categoriesWithIcons,
           goals,
           dateRange: { from: fromDate, to: toDate },
           generatedAt: new Date().toISOString(),
-        });
+        };
 
-        // Trigger print dialog after a short delay to allow the page to fully render.
-        setTimeout(() => window.print(), 1000);
+        setData(reportData);
+        // Aciona a impressão APÓS os dados estarem no estado
+        setTimeout(() => window.print(), 500); 
 
       } catch (err) {
-        console.error('Failed to fetch report data:', err);
-        setError('Ocorreu um erro ao buscar os dados para o relatório. Tente novamente.');
+        console.error("ERRO AO BUSCAR DADOS DO RELATÓRIO:", err);
+        setError("Não foi possível carregar os dados do relatório. Verifique o console para mais detalhes.");
+      
       } finally {
+        // C. ESSENCIAL! Garante que o loading pare, COM SUCESSO OU COM ERRO.
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user, searchParams]);
+
+  }, [user, searchParams, router]);
 
   const financialSummary = useMemo(() => {
     if (!data) return { income: 0, expenses: 0, balance: 0 };
@@ -251,7 +261,7 @@ function ReportPageContent() {
                   const category = data.categories.find(c => c.id === t.category);
                   return (
                     <TableRow key={t.id}>
-                      <TableCell>{format(new Date(t.date.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
+                      <TableCell>{format(parseISO(t.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                       <TableCell>{t.description}</TableCell>
                       <TableCell>{category?.name || 'N/A'}</TableCell>
                       <TableCell className={`text-right font-medium ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
@@ -277,10 +287,16 @@ function ReportPageContent() {
   );
 }
 
-export default function ReportPage() {
+export default function ReportPageWrapper() {
     return (
-        <Suspense fallback={<div>Carregando...</div>}>
-            <ReportPageContent />
+        // O Suspense é útil para aguardar o useSearchParams carregar no lado do cliente
+        <Suspense fallback={
+             <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background p-4 text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <h1 className="text-2xl font-semibold mb-2">Preparando o relatório...</h1>
+             </div>
+        }>
+            <ReportPage />
         </Suspense>
     )
 }
