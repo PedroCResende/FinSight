@@ -132,6 +132,15 @@ export default function BudgetsPage() {
     return budgets.filter(budget => budget.month === currentMonth);
   }, [budgets]);
   
+  const transactionsForCurrentMonth = useMemo(() => {
+    const currentMonthStart = startOfMonth(new Date());
+    const currentMonthEnd = endOfMonth(new Date());
+    return transactions.filter(t => {
+        const transactionDate = new Date(t.date.replace(/-/g, '/'));
+        return transactionDate >= currentMonthStart && transactionDate <= currentMonthEnd;
+    });
+  }, [transactions]);
+
 
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || 'Desconhecida';
@@ -218,9 +227,19 @@ export default function BudgetsPage() {
             <CardContent>
                 {activeBudgets.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {activeBudgets.map(budget => (
-                    <BudgetCard key={budget.id} budget={budget} category={categories.find(c => c.id === budget.categoryId)} />
-                    ))}
+                    {activeBudgets.map(budget => {
+                      const budgetTransactions = transactionsForCurrentMonth.filter(
+                          t => t.categoryId === budget.categoryId && t.amount < 0
+                      );
+                      return (
+                        <BudgetCard 
+                            key={budget.id} 
+                            budget={budget} 
+                            category={categories.find(c => c.id === budget.categoryId)}
+                            transactions={budgetTransactions}
+                        />
+                      )
+                    })}
                 </div>
                 ) : (
                 <p className="text-center text-muted-foreground">Nenhum orçamento definido para este mês. Crie um abaixo.</p>
@@ -306,5 +325,3 @@ export default function BudgetsPage() {
     </div>
   );
 }
-
-    
