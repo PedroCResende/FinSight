@@ -35,7 +35,7 @@ export default function LoginPage() {
 
     if (error.code === 'auth/configuration-not-found') {
       description = 'O método de login por e-mail/senha não está ativado no Firebase. Por favor, ative-o no Console do Firebase em Authentication > Sign-in method.';
-    } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+    } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
       description = 'E-mail ou senha inválidos.';
     } else if (error.code === 'auth/email-already-in-use') {
       description = 'Este e-mail já está em uso por outra conta.';
@@ -72,6 +72,7 @@ export default function LoginPage() {
     }
   };
 
+  const isLoginFormComplete = loginEmail.trim() !== '' && loginPassword.trim() !== '';
   const isSignupFormComplete = signupName.trim() !== '' && signupEmail.trim() !== '' && signupPassword.trim() !== '';
 
 
@@ -105,7 +106,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full" onClick={handleLogin} disabled={loading}>
+                <Button className="w-full" onClick={handleLogin} disabled={loading || !isLoginFormComplete}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Entrar
                 </Button>
@@ -137,7 +138,6 @@ export default function LoginPage() {
             <CardFooter>
                 <Button 
                     className="w-full" 
-                    variant={isSignupFormComplete ? 'default' : 'secondary'}
                     onClick={handleSignup} 
                     disabled={loading || !isSignupFormComplete}
                 >
