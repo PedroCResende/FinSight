@@ -34,22 +34,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ token }),
       });
 
+      if (user) {
+        router.push('/dashboard');
+      }
+
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const login = async ({ email, password }: LoginCredentials): Promise<User> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    router.push('/dashboard');
     return userCredential.user;
   };
 
   const signup = async ({ name, email, password }: SignUpCredentials): Promise<User> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     // You might want to create a user document in Firestore here as well
-    router.push('/dashboard');
     return userCredential.user;
   };
 

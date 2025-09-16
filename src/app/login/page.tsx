@@ -17,10 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PiggyBank, Loader2 } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { login, signup } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -68,6 +70,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login({ email: loginEmail, password: loginPassword });
+      router.push('/dashboard');
     } catch (error: any) {
       handleAuthError(error, 'login');
     } finally {
@@ -80,7 +83,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signup({ name: signupName, email: signupEmail, password: signupPassword });
-    } catch (error: any) {
+      router.push('/dashboard');
+    } catch (error: any)
       handleAuthError(error, 'signup');
     } finally {
         setLoading(false);
