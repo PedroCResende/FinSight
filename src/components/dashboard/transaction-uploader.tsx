@@ -21,7 +21,7 @@ interface TransactionUploaderProps {
   onUpload: (transactions: (Omit<Transaction, 'id' | 'category'> & { hash: string })[]) => void;
 }
 
-const SUPPORTED_BANKS = ["Nubank", "Itaú", "Bradesco", "Banco do Brasil", "Santander", "Caixa", "Inter", "Outro"];
+const SUPPORTED_BANKS = ["Nubank", "Itaú", "Bradesco", "Banco do Brasil", "Santander", "Caixa", "Inter", "C6 Bank", "Outro"];
 
 export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
   const [isParsing, setIsParsing] = useState(false);
