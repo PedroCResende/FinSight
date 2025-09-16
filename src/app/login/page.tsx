@@ -155,11 +155,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter>
-                <Button 
-                    className="w-full" 
-                    onClick={handleSignup} 
-                    disabled={loading || !isSignupFormComplete}
-                >
+                <Button className="w-full" onClick={handleSignup} disabled={loading || !isSignupFormComplete}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Criar Conta
                 </Button>
@@ -168,5 +164,5 @@ export default function LoginPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
