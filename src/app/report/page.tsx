@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { SpendingChart } from '@/components/dashboard/spending-chart';
 import { findIconComponent } from '@/components/dashboard/icon-picker';
-import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale, AlertTriangle, Loader2 } from 'lucide-react';
+import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale, AlertTriangle, Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getTransactionsByDateRange, getCategories, getGoals } from '@/services/firestore';
 import jsPDF from 'jspdf';
@@ -41,6 +41,7 @@ function ReportPage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   const generatePdf = async () => {
     const reportElement = document.getElementById('report-content');
@@ -49,15 +50,14 @@ function ReportPage() {
         return;
     }
     
-    setLoading(true); // Show a loading indicator during PDF generation
+    setIsGeneratingPdf(true);
     try {
         const canvas = await html2canvas(reportElement, {
-            scale: 2, // Improve quality
+            scale: 2,
             useCORS: true
         });
         const imgData = canvas.toDataURL('image/png');
         
-        // Calculate dimensions
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
@@ -90,7 +90,7 @@ function ReportPage() {
         console.error("Erro ao gerar PDF:", err);
         setError("Ocorreu um erro ao gerar o arquivo PDF.");
     } finally {
-        setLoading(false);
+        setIsGeneratingPdf(false);
     }
   };
 
@@ -149,18 +149,6 @@ function ReportPage() {
 
   }, [user, searchParams, router]);
 
-  // This useEffect will trigger after the `data` state is set and the component re-renders.
-  // The timeout gives the chart animation time to complete before generating the PDF.
-  useEffect(() => {
-    if (data) {
-      const timer = setTimeout(() => {
-        generatePdf();
-      }, 500); // 500ms delay for chart animation
-
-      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
-    }
-  }, [data]);
-
 
   const financialSummary = useMemo(() => {
     if (!data) return { income: 0, expenses: 0, balance: 0 };
@@ -178,7 +166,7 @@ function ReportPage() {
     return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   }
 
-  if (loading && !data) {
+  if (loading) {
     return (
       <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background p-4 text-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -210,7 +198,7 @@ function ReportPage() {
     );
   }
   
-    const ReportContent = () => (
+  const ReportContent = () => (
       <div id="report-content" className="bg-background text-foreground min-h-screen p-4 sm:p-6 md:p-8 report-container">
         <header className="mb-8">
           <div className="flex justify-between items-center">
@@ -342,15 +330,27 @@ function ReportPage() {
       </div>
   );
 
-
   return (
     <>
-      {loading && <div className="fixed inset-0 bg-background/80 flex flex-col items-center justify-center z-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <h1 className="text-2xl font-semibold mb-2">Gerando PDF do seu relatório...</h1>
-        <p className="text-muted-foreground">Isso pode demorar um pouco dependendo do tamanho do relatório.</p>
-      </div>}
-      <ReportContent />
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 no-print">
+            <div className="container max-w-7xl mx-auto flex items-center justify-between">
+                <h1 className="text-xl font-semibold">Visualização de Relatório</h1>
+                 <Button onClick={generatePdf} disabled={isGeneratingPdf}>
+                    {isGeneratingPdf ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Gerando...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Baixar PDF
+                        </>
+                    )}
+                </Button>
+            </div>
+        </header>
+        <ReportContent />
     </>
   );
 }

@@ -84,15 +84,12 @@
   }
 }
 
-@layer utilities {
-    .no-print {
-        display: none;
-    }
-}
-
 @media print {
   body * {
     visibility: hidden;
+  }
+  .no-print {
+    display: none !important;
   }
   #report-content, #report-content * {
     visibility: visible;
