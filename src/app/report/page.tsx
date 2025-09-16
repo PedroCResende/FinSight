@@ -22,6 +22,8 @@ import { findIconComponent } from '@/components/dashboard/icon-picker';
 import { PiggyBank, Target, ArrowUpCircle, ArrowDownCircle, Scale, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getTransactionsByDateRange, getCategories, getGoals } from '@/services/firestore';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReportData {
   transactions: Transaction[];
@@ -39,19 +41,68 @@ function ReportPage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const generatePdf = async () => {
+    const reportElement = document.getElementById('report-content');
+    if (!reportElement) {
+        setError("Não foi possível encontrar o elemento do relatório para gerar o PDF.");
+        return;
+    }
+    
+    setLoading(true); // Show a loading indicator during PDF generation
+    try {
+        const canvas = await html2canvas(reportElement, {
+            scale: 2, // Improve quality
+            useCORS: true
+        });
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Calculate dimensions
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        const imgWidth = pdfWidth;
+        const imgHeight = imgWidth / ratio;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
+
+        pdf.save('relatorio-finsight.pdf');
+    } catch(err) {
+        console.error("Erro ao gerar PDF:", err);
+        setError("Ocorreu um erro ao gerar o arquivo PDF.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    // A. Garantir que temos o usuário antes de fazer qualquer coisa
     if (!user) {
-      // Se não houver usuário, não faz sentido continuar.
-      // O AuthContext ainda pode estar carregando, ou o usuário não está logado.
       return;
     }
 
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
 
-    // B. Garantir que temos os parâmetros
     if (!fromParam || !toParam) {
       setError('Período de datas inválido. Por favor, gere o relatório novamente a partir do dashboard.');
       setLoading(false);
@@ -62,13 +113,13 @@ function ReportPage() {
     const toDate = parseISO(toParam);
 
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        // Use Promise.all para buscar tudo em paralelo
         const [transactions, categories, goals] = await Promise.all([
           getTransactionsByDateRange(user.uid, fromDate, toDate),
           getCategories(user.uid),
-          getGoals(user.uid), // A função getGoals busca todas, o filtro pode ser feito no cliente se necessário
+          getGoals(user.uid),
         ]);
 
         const categoriesWithIcons = categories.map((c: any) => ({
@@ -85,16 +136,18 @@ function ReportPage() {
         };
 
         setData(reportData);
-        // Aciona a impressão APÓS os dados estarem no estado
-        setTimeout(() => window.print(), 500); 
+        
+        // Use a short timeout to ensure the DOM is updated before generating PDF
+        setTimeout(() => {
+          generatePdf();
+        }, 500);
 
       } catch (err) {
         console.error("ERRO AO BUSCAR DADOS DO RELATÓRIO:", err);
         setError("Não foi possível carregar os dados do relatório. Verifique o console para mais detalhes.");
-      
       } finally {
-        // C. ESSENCIAL! Garante que o loading pare, COM SUCESSO OU COM ERRO.
-        setLoading(false);
+        // We set loading to false after PDF generation in generatePdf function
+        // setLoading(false); // This is now handled in generatePdf
       }
     };
 
@@ -118,7 +171,7 @@ function ReportPage() {
     return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   }
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background p-4 text-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -149,147 +202,154 @@ function ReportPage() {
       </div>
     );
   }
+  
+    const ReportContent = () => (
+      <div id="report-content" className="bg-background text-foreground min-h-screen p-4 sm:p-6 md:p-8 report-container">
+        <header className="mb-8">
+          <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                  <PiggyBank className="h-10 w-10 text-primary" />
+                  <div>
+                      <h1 className="text-3xl font-bold">Relatório Financeiro</h1>
+                      <p className="text-muted-foreground">Gerado em: {formatDate(new Date(data.generatedAt))}</p>
+                  </div>
+              </div>
+              <div className="text-right">
+                  <h2 className="font-semibold">Período do Relatório</h2>
+                  <p className="text-muted-foreground">
+                  {data.dateRange?.from ? formatDate(data.dateRange.from) : 'Início'} à {data.dateRange?.to ? formatDate(data.dateRange.to) : 'Fim'}
+                  </p>
+              </div>
+          </div>
+        </header>
+
+        <main className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumo Financeiro do Período</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-4">
+                  <ArrowUpCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <div>
+                      <p className="text-sm text-green-800 dark:text-green-300">Total de Entradas</p>
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-200">{formatCurrency(financialSummary.income)}</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-4">
+                  <ArrowDownCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+                  <div>
+                      <p className="text-sm text-red-800 dark:text-red-300">Total de Saídas</p>
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-200">{formatCurrency(financialSummary.expenses)}</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center gap-4">
+                  <Scale className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div>
+                      <p className="text-sm text-blue-800 dark:text-blue-300">Saldo Final</p>
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{formatCurrency(financialSummary.balance)}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              <div className="lg:col-span-2">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Distribuição de Despesas</CardTitle>
+                          <CardDescription>Como seus gastos foram distribuídos por categoria.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <SpendingChart transactions={data.transactions} categories={data.categories} />
+                      </CardContent>
+                  </Card>
+              </div>
+              <div className="lg:col-span-3">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Progresso das Metas</CardTitle>
+                          <CardDescription>Acompanhamento de suas metas financeiras.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                          {data.goals.length > 0 ? data.goals.map(goal => (
+                              <div key={goal.id}>
+                                  <div className="flex justify-between mb-1">
+                                      <p className="font-semibold flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> {goal.title}</p>
+                                      <Badge variant={goal.status === 'completed' ? 'default' : 'secondary'}>{goal.status === 'completed' ? 'Concluída' : 'Em Andamento'}</Badge>
+                                  </div>
+                                  <Progress value={(goal.savedAmount / goal.targetAmount) * 100} />
+                                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                                      <span>{formatCurrency(goal.savedAmount)}</span>
+                                      <span>{formatCurrency(goal.targetAmount)}</span>
+                                  </div>
+                              </div>
+                          )) : (
+                              <p className="text-muted-foreground text-center py-8">Nenhuma meta cadastrada.</p>
+                          )}
+                      </CardContent>
+                  </Card>
+              </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalhe das Transações</CardTitle>
+              <CardDescription>Todas as transações registradas no período selecionado.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.transactions.length > 0 ? data.transactions.map((t) => {
+                    const category = data.categories.find(c => c.id === t.category);
+                    return (
+                      <TableRow key={t.id}>
+                        <TableCell>{format(parseISO(t.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                        <TableCell>{t.description}</TableCell>
+                        <TableCell>{category?.name || 'N/A'}</TableCell>
+                        <TableCell className={`text-right font-medium ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                          {formatCurrency(t.amount)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">Nenhuma transação neste período.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+  );
+
 
   return (
-    <div id="report-content" className="bg-background text-foreground min-h-screen p-4 sm:p-6 md:p-8 report-container">
-      <header className="mb-8">
-        <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-                <PiggyBank className="h-10 w-10 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold">Relatório Financeiro</h1>
-                    <p className="text-muted-foreground">Gerado em: {formatDate(new Date(data.generatedAt))}</p>
-                </div>
-            </div>
-            <div className="text-right">
-                <h2 className="font-semibold">Período do Relatório</h2>
-                <p className="text-muted-foreground">
-                {data.dateRange?.from ? formatDate(data.dateRange.from) : 'Início'} à {data.dateRange?.to ? formatDate(data.dateRange.to) : 'Fim'}
-                </p>
-            </div>
-        </div>
-      </header>
-
-      <main className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo Financeiro do Período</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-4">
-                <ArrowUpCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-                <div>
-                    <p className="text-sm text-green-800 dark:text-green-300">Total de Entradas</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-200">{formatCurrency(financialSummary.income)}</p>
-                </div>
-              </div>
-              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-4">
-                <ArrowDownCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
-                <div>
-                    <p className="text-sm text-red-800 dark:text-red-300">Total de Saídas</p>
-                    <p className="text-2xl font-bold text-red-700 dark:text-red-200">{formatCurrency(financialSummary.expenses)}</p>
-                </div>
-              </div>
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center gap-4">
-                <Scale className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                <div>
-                    <p className="text-sm text-blue-800 dark:text-blue-300">Saldo Final</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{formatCurrency(financialSummary.balance)}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <div className="lg:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Distribuição de Despesas</CardTitle>
-                        <CardDescription>Como seus gastos foram distribuídos por categoria.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <SpendingChart transactions={data.transactions} categories={data.categories} />
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-3">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Progresso das Metas</CardTitle>
-                        <CardDescription>Acompanhamento de suas metas financeiras.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {data.goals.length > 0 ? data.goals.map(goal => (
-                             <div key={goal.id}>
-                                <div className="flex justify-between mb-1">
-                                    <p className="font-semibold flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> {goal.title}</p>
-                                    <Badge variant={goal.status === 'completed' ? 'default' : 'secondary'}>{goal.status === 'completed' ? 'Concluída' : 'Em Andamento'}</Badge>
-                                </div>
-                                <Progress value={(goal.savedAmount / goal.targetAmount) * 100} />
-                                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                                    <span>{formatCurrency(goal.savedAmount)}</span>
-                                    <span>{formatCurrency(goal.targetAmount)}</span>
-                                </div>
-                            </div>
-                        )) : (
-                            <p className="text-muted-foreground text-center py-8">Nenhuma meta cadastrada.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalhe das Transações</CardTitle>
-            <CardDescription>Todas as transações registradas no período selecionado.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.transactions.length > 0 ? data.transactions.map((t) => {
-                  const category = data.categories.find(c => c.id === t.category);
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell>{format(parseISO(t.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                      <TableCell>{t.description}</TableCell>
-                      <TableCell>{category?.name || 'N/A'}</TableCell>
-                      <TableCell className={`text-right font-medium ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(t.amount)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                }) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">Nenhuma transação neste período.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </main>
-
-       <footer className="mt-8 text-center text-xs text-muted-foreground print-footer">
-            Relatório gerado por FinSight.
-       </footer>
-    </div>
+    <>
+      {loading && <div className="fixed inset-0 bg-background/80 flex flex-col items-center justify-center z-50">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h1 className="text-2xl font-semibold mb-2">Gerando PDF do seu relatório...</h1>
+        <p className="text-muted-foreground">Isso pode demorar um pouco dependendo do tamanho do relatório.</p>
+      </div>}
+      <ReportContent />
+    </>
   );
 }
 
 export default function ReportPageWrapper() {
     return (
-        // O Suspense é útil para aguardar o useSearchParams carregar no lado do cliente
         <Suspense fallback={
              <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background p-4 text-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
