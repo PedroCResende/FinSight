@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { getTransactionsByDateRange, getCategories, getGoals } from '@/services/firestore';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import Head from 'next/head';
 
 interface ReportData {
   transactions: Transaction[];
@@ -332,6 +333,10 @@ function ReportPage() {
 
   return (
     <>
+        <Head>
+            <title>Relatório Financeiro - FinSight</title>
+            <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A7D9A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 21h4c4.4 0 8-3.6 8-8V7a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v6c0 4.4 3.6 8 8 8Z'/%3E%3Cpath d='M16 9h.01'/%3E%3Cpath d='M2 13.6c0 1.6 1.3 2.9 2.9 2.9h14.2c1.6 0 2.9-1.3 2.9-2.9v-2.1'/%3E%3C/svg%3E" type="image/svg+xml" />
+        </Head>
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 no-print">
             <div className="container max-w-7xl mx-auto flex items-center justify-between">
                 <h1 className="text-xl font-semibold">Visualização de Relatório</h1>
