@@ -68,7 +68,7 @@ const prompt = ai.definePrompt({
 **Sua Tarefa:**
 1.  **Analise o Padrão de Gastos:** Observe a frequência e o valor médio das transações.
 2.  **Calcule a Projeção:** Com base no ritmo de gastos até agora ({{{currentDate}}}), projete qual será o gasto total no final do mês.
-3.  **Determine o Status:** Compare a projeção com o `budgetLimit`. O usuário está no caminho certo para estourar o orçamento ou para economizar? Defina o campo \`isOnTrack\` (true se estiver dentro do orçamento, false se for exceder).
+3.  **Determine o Status:** Compare a projeção com o 'budgetLimit'. O usuário está no caminho certo para estourar o orçamento ou para economizar? Defina o campo 'isOnTrack' (true se estiver dentro do orçamento, false se for exceder).
 4.  **Crie a Previsão (prediction):** Escreva uma frase curta e direta que resuma a projeção.
     *   Exemplo (se for estourar): "Você provavelmente excederá seu orçamento em cerca de R$ 50."
     *   Exemplo (se estiver ok): "Você está a caminho de terminar o mês com uma folga de R$ 80 no orçamento."
