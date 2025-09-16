@@ -137,23 +137,30 @@ function ReportPage() {
 
         setData(reportData);
         
-        // Use a short timeout to ensure the DOM is updated before generating PDF
-        setTimeout(() => {
-          generatePdf();
-        }, 500);
-
       } catch (err) {
         console.error("ERRO AO BUSCAR DADOS DO RELATÓRIO:", err);
         setError("Não foi possível carregar os dados do relatório. Verifique o console para mais detalhes.");
       } finally {
-        // We set loading to false after PDF generation in generatePdf function
-        // setLoading(false); // This is now handled in generatePdf
+        setLoading(false);
       }
     };
 
     fetchData();
 
   }, [user, searchParams, router]);
+
+  // This useEffect will trigger after the `data` state is set and the component re-renders.
+  // The timeout gives the chart animation time to complete before generating the PDF.
+  useEffect(() => {
+    if (data) {
+      const timer = setTimeout(() => {
+        generatePdf();
+      }, 500); // 500ms delay for chart animation
+
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+    }
+  }, [data]);
+
 
   const financialSummary = useMemo(() => {
     if (!data) return { income: 0, expenses: 0, balance: 0 };
