@@ -69,9 +69,9 @@ const parseBankStatementCsvFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
+    // This can happen if the AI returns a perfectly valid but empty response,
+    // or even a completely nullish one. We'll return an empty array to prevent an error downstream.
     if (!output?.transactions) {
-      // This can happen if the AI returns a perfectly valid but empty response.
-      // We'll return an empty array to prevent an error downstream.
       return { transactions: [] };
     }
     return output;

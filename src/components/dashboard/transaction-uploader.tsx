@@ -70,7 +70,11 @@ export function TransactionUploader({ onUpload }: TransactionUploaderProps) {
         });
         
         if (!result.transactions || result.transactions.length === 0) {
-            throw new Error("A IA não conseguiu encontrar nenhuma transação no arquivo. Verifique se o banco selecionado está correto e se o arquivo é um extrato CSV válido.");
+            toast({
+                title: 'Nenhuma transação encontrada',
+                description: 'A IA não encontrou transações no arquivo. Verifique se o banco e o arquivo estão corretos.',
+            });
+            return;
         }
 
         const sanitizedTransactions = result.transactions.map(tx => ({
