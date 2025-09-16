@@ -5,6 +5,7 @@ import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEma
 import { auth } from '@/lib/firebase/config';
 import type { LoginCredentials, SignUpCredentials } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 
 interface AuthContextType {
@@ -25,24 +26,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      const token = user ? await user.getIdToken() : '';
-      
-      // Call API to set/clear cookie
-      await fetch('/api/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-      });
-
       if (user) {
-        router.push('/dashboard');
+        const token = await user.getIdToken();
+        Cookies.set('firebaseIdToken', token, { path: '/' });
+      } else {
+        Cookies.remove('firebaseIdToken', { path: '/' });
       }
-
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const login = async ({ email, password }: LoginCredentials): Promise<User> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -57,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    // API route will be hit by onAuthStateChanged to clear cookie
     router.push('/login');
   };
 
