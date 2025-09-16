@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { initializeAuth, browserLocalPersistence } from "firebase/auth";
+import { initializeAuth, browserLocalPersistence, getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -18,9 +18,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 // Use initializeAuth with browserLocalPersistence for iframe compatibility
-const auth = initializeAuth(app, {
-  persistence: browserLocalPersistence
-});
+const auth = typeof window !== 'undefined' 
+  ? initializeAuth(app, { persistence: browserLocalPersistence })
+  : getAuth(app);
+  
 const db = getFirestore(app);
 
 export { app, auth, db };
