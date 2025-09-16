@@ -33,15 +33,28 @@ export default function LoginPage() {
     const title = action === 'login' ? 'Erro ao entrar' : 'Erro ao criar conta';
     let description = 'Ocorreu um erro inesperado. Tente novamente.';
 
-    if (error.code === 'auth/configuration-not-found') {
-      description = 'O método de login por e-mail/senha não está ativado no Firebase. Por favor, ative-o no Console do Firebase em Authentication > Sign-in method.';
-    } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-      description = 'E-mail ou senha inválidos.';
-    } else if (error.code === 'auth/email-already-in-use') {
-      description = 'Este e-mail já está em uso por outra conta.';
-    } else {
-        description = error.message;
+    if (error.code) {
+        switch (error.code) {
+            case 'auth/wrong-password':
+            case 'auth/user-not-found':
+            case 'auth/invalid-credential':
+              description = 'E-mail ou senha inválidos.';
+              break;
+            case 'auth/email-already-in-use':
+              description = 'Este e-mail já está em uso por outra conta.';
+              break;
+            case 'auth/weak-password':
+              description = 'A senha é muito fraca. Ela deve ter no mínimo 6 caracteres.';
+              break;
+            case 'auth/invalid-email':
+                description = 'O formato do e-mail é inválido.';
+                break;
+            default:
+              description = error.message;
+              break;
+        }
     }
+
 
     toast({
       variant: 'destructive',
@@ -51,6 +64,7 @@ export default function LoginPage() {
   };
 
   const handleLogin = async () => {
+    if (!isLoginFormComplete) return;
     setLoading(true);
     try {
       await login({ email: loginEmail, password: loginPassword });
@@ -62,6 +76,7 @@ export default function LoginPage() {
   };
   
   const handleSignup = async () => {
+    if (!isSignupFormComplete) return;
     setLoading(true);
     try {
       await signup({ name: signupName, email: signupEmail, password: signupPassword });
