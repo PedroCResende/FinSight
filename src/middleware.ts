@@ -1,5 +1,3 @@
-'use client';
-
 import { NextResponse, type NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
@@ -11,7 +9,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Se o usuário tentar acessar uma página protegida sem um token, redirecione para o login
+  // Se o usuário tentar acessar qualquer página protegida sem um token, redirecione para o login
   if (!token && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
@@ -20,5 +18,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|login).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
