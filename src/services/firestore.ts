@@ -114,7 +114,7 @@ export async function addTransactionsWithDeduplication(
   newTransactions.forEach(txData => {
     const docRef = doc(collection(db, `users/${userId}/transactions`));
     batch.set(docRef, txData);
-    addedDocs.push({ id: docRef.id, ...txData });
+    addedDocs.push({ id: docRef.id, ...convertTimestamp(txData) } as Transaction);
   });
 
   await batch.commit();
@@ -252,3 +252,5 @@ export async function unlockAchievement(userId: string, achievementId: string): 
     });
     return docRef.id;
 }
+
+    

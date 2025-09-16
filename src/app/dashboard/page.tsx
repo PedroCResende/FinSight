@@ -143,28 +143,33 @@ export default function DashboardPage() {
      }
   };
   
-    const handleAddContribution = () => {
-    if (!contributionGoal || !contributionAmount) return;
+    const handleAddContribution = async () => {
+    if (!user || !contributionGoal || !contributionAmount) return;
 
     const amount = parseFloat(contributionAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (isNaN(amount) || amount <= 0) {
+        toast({ variant: 'destructive', title: 'Valor Inválido', description: 'Por favor, insira um valor de contribuição válido.' });
+        return;
+    }
 
-    setGoals(
-      goals.map(g => {
-        if (g.id === contributionGoal.id) {
-          const newSavedAmount = g.savedAmount + amount;
-          return {
-            ...g,
-            savedAmount: newSavedAmount,
-            status: newSavedAmount >= g.targetAmount ? 'completed' : g.status,
-          };
-        }
-        return g;
-      })
-    );
-    setContributionGoal(null);
-    setContributionAmount('');
+    const newSavedAmount = contributionGoal.savedAmount + amount;
+    const newStatus = newSavedAmount >= contributionGoal.targetAmount ? 'completed' : contributionGoal.status;
+
+    try {
+        await updateGoal(user.uid, contributionGoal.id, { savedAmount: newSavedAmount, status: newStatus });
+        setGoals(
+          goals.map(g => 
+            g.id === contributionGoal.id ? { ...g, savedAmount: newSavedAmount, status: newStatus } : g
+          )
+        );
+        toast({ title: 'Sucesso', description: `Contribuição de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} adicionada!` });
+        setContributionGoal(null);
+        setContributionAmount('');
+    } catch(error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível adicionar a contribuição.' });
+    }
   };
+
 
   const handleDeleteTransaction = async (transactionId: string) => {
     if (!user) return;
@@ -398,3 +403,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
