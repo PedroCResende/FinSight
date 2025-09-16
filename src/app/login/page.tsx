@@ -84,7 +84,7 @@ export default function LoginPage() {
     try {
       await signup({ name: signupName, email: signupEmail, password: signupPassword });
       router.push('/dashboard');
-    } catch (error: any)
+    } catch (error: any) {
       handleAuthError(error, 'signup');
     } finally {
         setLoading(false);
