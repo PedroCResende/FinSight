@@ -6,7 +6,7 @@ import { Header } from '@/components/dashboard/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Moon, Sun, Monitor, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { Moon, Sun, Monitor, ArrowLeft, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -128,6 +128,24 @@ export default function SettingsPage() {
               </RadioGroup>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Segurança e Privacidade</CardTitle>
+              <CardDescription>
+                Entenda como seus dados são protegidos e gerenciados.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/security">
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Ver nossa Política de Segurança
+                  </Link>
+                </Button>
+            </CardContent>
+          </Card>
+
 
            <Card className="border-destructive">
             <CardHeader>
